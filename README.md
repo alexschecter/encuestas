@@ -1,4 +1,4 @@
-# Diagnósticos
+# Encuestas de colaboración
 
 Encuestas de colaboración interfuncional. Las respuestas se envían a los Google Forms originales.
 
