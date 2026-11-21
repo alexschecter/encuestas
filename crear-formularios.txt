@@ -1,0 +1,1070 @@
+/**
+ * Crea los 4 formularios de diagnóstico en tu cuenta de Google, cada uno con su hoja de respuestas.
+ * Cómo usarlo: pegá todo este texto en script.google.com, guardá y tocá "Ejecutar".
+ * Al terminar, abrí "Registro de ejecución" y copiá los 4 enlaces que aparecen.
+ */
+const DEFS = [
+ {
+  "id": "colab",
+  "title": "Colaboración Interfuncional",
+  "purpose": "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas. Tu perspectiva es clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.",
+  "sections": [
+   {
+    "title": "Mis prácticas de comunicación",
+    "qs": [
+     [
+      "Busco la opinión de otros departamentos antes de tomar decisiones clave.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Entiendo cómo mi trabajo impacta a otros equipos dentro del negocio.",
+      [
+       "Totalmente de acuerdo",
+       "Algo de acuerdo",
+       "Poco de acuerdo",
+       "En desacuerdo"
+      ]
+     ],
+     [
+      "Tomo la iniciativa de alinear objetivos con colegas de otras funciones.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Me siento con confianza y claridad al comunicarme entre funciones.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Cuando surgen problemas que involucran a varios equipos, me comunico directamente para resolverlos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cultura de equipo y colaboración",
+    "qs": [
+     [
+      "Mi equipo entiende y toma en cuenta las prioridades de otros departamentos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Las reuniones interfuncionales en nuestra organización son colaborativas y orientadas a resultados.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Es seguro y está bien visto dar o recibir feedback entre departamentos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Cuando surge fricción entre equipos, se aborda de manera directa y constructiva.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Reconocemos y celebramos los logros que resultan de la colaboración entre equipos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cómo fluye la comunicación",
+    "qs": [
+     [
+      "Cuando empiezo un nuevo proyecto, suelo tener claridad sobre cómo afectará a otros equipos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En las reuniones con otras áreas, siento que se entienden los objetivos comunes.",
+      [
+       "Totalmente de acuerdo",
+       "Algo de acuerdo",
+       "Poco de acuerdo",
+       "En desacuerdo"
+      ]
+     ],
+     [
+      "Cuando hay confusión entre áreas, ¿cómo suele resolverse?",
+      [
+       "Conversación directa",
+       "Por escalamiento",
+       "Con evasión o espera",
+       "No se resuelve fácilmente"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Patrones y percepciones",
+    "qs": [
+     [
+      "En nuestro día a día, las decisiones se toman…",
+      [
+       "Con múltiples puntos de vista",
+       "Según el criterio de cada área",
+       "Con presión de plazos más que colaboración",
+       "De forma poco conectada entre equipos"
+      ]
+     ],
+     [
+      "¿Qué tan común es que compartamos información antes de que sea “necesaria”?",
+      [
+       "Muy común",
+       "Ocasional",
+       "Solo si hay un problema",
+       "Rara vez sucede"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Percepciones del entorno",
+    "qs": [
+     [
+      "Cuando pienso en cómo colaboran otras áreas con la mía, diría que:",
+      [
+       "Suelen anticiparse y compartir información útil",
+       "Colaboran cuando se les pide",
+       "Están demasiado enfocadas en lo suyo",
+       "Hay fricción o poca conexión"
+      ]
+     ],
+     [
+      "En conversaciones con otras áreas, lo que más noto es:",
+      [
+       "Curiosidad por entender nuestras necesidades",
+       "Deseo de resolver cosas rápido y seguir",
+       "Enfoque en lo propio, sin mucho contexto",
+       "Falta de claridad sobre objetivos comunes"
+      ]
+     ],
+     [
+      "Si tuviera que describir la comunicación entre áreas, diría que es…",
+      [
+       "Fluida y basada en la confianza",
+       "Funcional, pero limitada",
+       "Lenta o con muchos malentendidos",
+       "Fragmentada y reactiva"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Percepción sobre otras áreas",
+    "qs": [
+     [
+      "Otros equipos anticipan cómo sus decisiones afectan a mi área.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En general, otras áreas muestran interés genuino por los objetivos de mi equipo.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En momentos de urgencia, otros equipos se activan de forma colaborativa y sin resistencias.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Hay disposición por parte de otros equipos para ajustar planes cuando hay impacto cruzado.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Percibo una cultura de apoyo mutuo entre departamentos, no solo cumplimiento de tareas.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ {
+  "id": "colab-cultura",
+  "title": "Colaboración Interfuncional & Cultura",
+  "purpose": "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas, y el estado de la cultura de la empresa. Tus perspectivas son clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.",
+  "sections": [
+   {
+    "title": "Mis prácticas de comunicación",
+    "qs": [
+     [
+      "Busco la opinión de otros departamentos antes de tomar decisiones clave.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Entiendo cómo mi trabajo impacta a otros equipos dentro del negocio.",
+      [
+       "Totalmente de acuerdo",
+       "Algo de acuerdo",
+       "Poco de acuerdo",
+       "En desacuerdo"
+      ]
+     ],
+     [
+      "Tomo la iniciativa de alinear objetivos con colegas de otras funciones.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Me siento con confianza y claridad al comunicarme entre funciones.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Cuando surgen problemas que involucran a varios equipos, me comunico directamente para resolverlos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cultura de equipo y colaboración",
+    "qs": [
+     [
+      "Mi equipo entiende y toma en cuenta las prioridades de otros departamentos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Las reuniones interfuncionales en nuestra organización son colaborativas y orientadas a resultados.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Es seguro y está bien visto dar o recibir feedback entre departamentos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Cuando surge fricción entre equipos, se aborda de manera directa y constructiva.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Reconocemos y celebramos los logros que resultan de la colaboración entre equipos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cómo fluye la comunicación",
+    "qs": [
+     [
+      "Cuando empiezo un nuevo proyecto, suelo tener claridad sobre cómo afectará a otros equipos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En las reuniones con otras áreas, siento que se entienden los objetivos comunes.",
+      [
+       "Totalmente de acuerdo",
+       "Algo de acuerdo",
+       "Poco de acuerdo",
+       "En desacuerdo"
+      ]
+     ],
+     [
+      "Cuando hay confusión entre áreas, ¿cómo suele resolverse?",
+      [
+       "Conversación directa",
+       "Por escalamiento",
+       "Con evasión o espera",
+       "No se resuelve fácilmente"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Patrones y percepciones",
+    "qs": [
+     [
+      "En nuestro día a día, las decisiones se toman…",
+      [
+       "Con múltiples puntos de vista",
+       "Según el criterio de cada área",
+       "Con presión de plazos más que colaboración",
+       "De forma poco conectada entre equipos"
+      ]
+     ],
+     [
+      "¿Qué tan común es que compartamos información antes de que sea “necesaria”?",
+      [
+       "Muy común",
+       "Ocasional",
+       "Solo si hay un problema",
+       "Rara vez sucede"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Percepciones del entorno",
+    "qs": [
+     [
+      "Cuando pienso en cómo colaboran otras áreas con la mía, diría que:",
+      [
+       "Suelen anticiparse y compartir información útil",
+       "Colaboran cuando se les pide",
+       "Están demasiado enfocadas en lo suyo",
+       "Hay fricción o poca conexión"
+      ]
+     ],
+     [
+      "En conversaciones con otras áreas, lo que más noto es:",
+      [
+       "Curiosidad por entender nuestras necesidades",
+       "Deseo de resolver cosas rápido y seguir",
+       "Enfoque en lo propio, sin mucho contexto",
+       "Falta de claridad sobre objetivos comunes"
+      ]
+     ],
+     [
+      "Si tuviera que describir la comunicación entre áreas, diría que es…",
+      [
+       "Fluida y basada en la confianza",
+       "Funcional, pero limitada",
+       "Lenta o con muchos malentendidos",
+       "Fragmentada y reactiva"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Percepción sobre otras áreas",
+    "qs": [
+     [
+      "Otros equipos anticipan cómo sus decisiones afectan a mi área.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En general, otras áreas muestran interés genuino por los objetivos de mi equipo.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En momentos de urgencia, otros equipos se activan de forma colaborativa y sin resistencias.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Hay disposición por parte de otros equipos para ajustar planes cuando hay impacto cruzado.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Percibo una cultura de apoyo mutuo entre departamentos, no solo cumplimiento de tareas.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cultura",
+    "qs": [
+     [
+      "Tengo claras las diferencias entre Valores, Competencias y No-Negociables en la empresa.",
+      [
+       "Totalmente",
+       "Más o menos",
+       "Para nada"
+      ]
+     ],
+     [
+      "Mis cuatro No-Negociables top son:",
+      null
+     ],
+     [
+      "¿Cuáles son los valores más difíciles de vivir en tu rol? ¿Qué los hace desafiantes?",
+      null
+     ],
+     [
+      "¿Creés que la cultura de la empresa refleja los valores declarados? ¿Tenés algún ejemplo que quieras compartir?",
+      null
+     ],
+     [
+      "¿Qué tres palabras describen mejor la cultura de la empresa hoy en día?",
+      null
+     ],
+     [
+      "¿Dónde ves gaps entre lo que decimos que valoramos y lo que realmente hacemos?",
+      null
+     ]
+    ]
+   }
+  ]
+ },
+ {
+  "id": "colab-direccion",
+  "title": "Colaboración Interfuncional (Dirección)",
+  "purpose": "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas. Tu perspectiva es clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.",
+  "sections": [
+   {
+    "title": "Mis prácticas de comunicación",
+    "qs": [
+     [
+      "Busco la opinión de otros departamentos antes de tomar decisiones clave.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Entiendo cómo mi trabajo impacta a otros equipos dentro del negocio.",
+      [
+       "Totalmente de acuerdo",
+       "Algo de acuerdo",
+       "Poco de acuerdo",
+       "En desacuerdo"
+      ]
+     ],
+     [
+      "Tomo la iniciativa de alinear objetivos con colegas de otras funciones.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Me siento con confianza y claridad al comunicarme entre funciones.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Cuando surgen problemas que involucran a varios equipos, me comunico directamente para resolverlos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cultura de equipo y colaboración",
+    "qs": [
+     [
+      "Mi equipo entiende y toma en cuenta las prioridades de otros departamentos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Las reuniones interfuncionales en nuestra organización son colaborativas y orientadas a resultados.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Es seguro y está bien visto dar o recibir feedback entre departamentos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Cuando surge fricción entre equipos, se aborda de manera directa y constructiva.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Reconocemos y celebramos los logros que resultan de la colaboración entre equipos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cómo fluye la comunicación",
+    "qs": [
+     [
+      "Cuando empiezo un nuevo proyecto, suelo tener claridad sobre cómo afectará a otros equipos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En las reuniones con otras áreas, siento que se entienden los objetivos comunes.",
+      [
+       "Totalmente de acuerdo",
+       "Algo de acuerdo",
+       "Poco de acuerdo",
+       "En desacuerdo"
+      ]
+     ],
+     [
+      "Cuando hay confusión entre áreas, ¿cómo suele resolverse?",
+      [
+       "Conversación directa",
+       "Por escalamiento",
+       "Con evasión o espera",
+       "No se resuelve fácilmente"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Patrones y percepciones",
+    "qs": [
+     [
+      "En nuestro día a día, las decisiones se toman…",
+      [
+       "Con múltiples puntos de vista",
+       "Según el criterio de cada área",
+       "Con presión de plazos más que colaboración",
+       "De forma poco conectada entre equipos"
+      ]
+     ],
+     [
+      "¿Qué tan común es que compartamos información antes de que sea “necesaria”?",
+      [
+       "Muy común",
+       "Ocasional",
+       "Solo si hay un problema",
+       "Rara vez sucede"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Percepciones del entorno",
+    "qs": [
+     [
+      "Cuando pienso en cómo colaboran otras áreas con la mía, diría que:",
+      [
+       "Suelen anticiparse y compartir información útil",
+       "Colaboran cuando se les pide",
+       "Están demasiado enfocadas en lo suyo",
+       "Hay fricción o poca conexión"
+      ]
+     ],
+     [
+      "En conversaciones con otras áreas, lo que más noto es:",
+      [
+       "Curiosidad por entender nuestras necesidades",
+       "Deseo de resolver cosas rápido y seguir",
+       "Enfoque en lo propio, sin mucho contexto",
+       "Falta de claridad sobre objetivos comunes"
+      ]
+     ],
+     [
+      "Si tuviera que describir la comunicación entre áreas, diría que es…",
+      [
+       "Fluida y basada en la confianza",
+       "Funcional, pero limitada",
+       "Lenta o con muchos malentendidos",
+       "Fragmentada y reactiva"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Percepción sobre otras áreas",
+    "qs": [
+     [
+      "Otros equipos anticipan cómo sus decisiones afectan a mi área.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En general, otras áreas muestran interés genuino por los objetivos de mi equipo.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En momentos de urgencia, otros equipos se activan de forma colaborativa y sin resistencias.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Hay disposición por parte de otros equipos para ajustar planes cuando hay impacto cruzado.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Percibo una cultura de apoyo mutuo entre departamentos, no solo cumplimiento de tareas.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ {
+  "id": "colab-cultura-direccion",
+  "title": "Colaboración Interfuncional & Cultura (Dirección)",
+  "purpose": "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas, y el estado de la cultura de la empresa. Tus perspectivas son clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.",
+  "sections": [
+   {
+    "title": "Mis prácticas de comunicación",
+    "qs": [
+     [
+      "Busco la opinión de otros departamentos antes de tomar decisiones clave.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Entiendo cómo mi trabajo impacta a otros equipos dentro del negocio.",
+      [
+       "Totalmente de acuerdo",
+       "Algo de acuerdo",
+       "Poco de acuerdo",
+       "En desacuerdo"
+      ]
+     ],
+     [
+      "Tomo la iniciativa de alinear objetivos con colegas de otras funciones.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Me siento con confianza y claridad al comunicarme entre funciones.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Cuando surgen problemas que involucran a varios equipos, me comunico directamente para resolverlos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cultura de equipo y colaboración",
+    "qs": [
+     [
+      "Mi equipo entiende y toma en cuenta las prioridades de otros departamentos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Las reuniones interfuncionales en nuestra organización son colaborativas y orientadas a resultados.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Es seguro y está bien visto dar o recibir feedback entre departamentos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Cuando surge fricción entre equipos, se aborda de manera directa y constructiva.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Reconocemos y celebramos los logros que resultan de la colaboración entre equipos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cómo fluye la comunicación",
+    "qs": [
+     [
+      "Cuando empiezo un nuevo proyecto, suelo tener claridad sobre cómo afectará a otros equipos.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En las reuniones con otras áreas, siento que se entienden los objetivos comunes.",
+      [
+       "Totalmente de acuerdo",
+       "Algo de acuerdo",
+       "Poco de acuerdo",
+       "En desacuerdo"
+      ]
+     ],
+     [
+      "Cuando hay confusión entre áreas, ¿cómo suele resolverse?",
+      [
+       "Conversación directa",
+       "Por escalamiento",
+       "Con evasión o espera",
+       "No se resuelve fácilmente"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Patrones y percepciones",
+    "qs": [
+     [
+      "En nuestro día a día, las decisiones se toman…",
+      [
+       "Con múltiples puntos de vista",
+       "Según el criterio de cada área",
+       "Con presión de plazos más que colaboración",
+       "De forma poco conectada entre equipos"
+      ]
+     ],
+     [
+      "¿Qué tan común es que compartamos información antes de que sea “necesaria”?",
+      [
+       "Muy común",
+       "Ocasional",
+       "Solo si hay un problema",
+       "Rara vez sucede"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Percepciones del entorno",
+    "qs": [
+     [
+      "Cuando pienso en cómo colaboran otras áreas con la mía, diría que:",
+      [
+       "Suelen anticiparse y compartir información útil",
+       "Colaboran cuando se les pide",
+       "Están demasiado enfocadas en lo suyo",
+       "Hay fricción o poca conexión"
+      ]
+     ],
+     [
+      "En conversaciones con otras áreas, lo que más noto es:",
+      [
+       "Curiosidad por entender nuestras necesidades",
+       "Deseo de resolver cosas rápido y seguir",
+       "Enfoque en lo propio, sin mucho contexto",
+       "Falta de claridad sobre objetivos comunes"
+      ]
+     ],
+     [
+      "Si tuviera que describir la comunicación entre áreas, diría que es…",
+      [
+       "Fluida y basada en la confianza",
+       "Funcional, pero limitada",
+       "Lenta o con muchos malentendidos",
+       "Fragmentada y reactiva"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Percepción sobre otras áreas",
+    "qs": [
+     [
+      "Otros equipos anticipan cómo sus decisiones afectan a mi área.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En general, otras áreas muestran interés genuino por los objetivos de mi equipo.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "En momentos de urgencia, otros equipos se activan de forma colaborativa y sin resistencias.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Hay disposición por parte de otros equipos para ajustar planes cuando hay impacto cruzado.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ],
+     [
+      "Percibo una cultura de apoyo mutuo entre departamentos, no solo cumplimiento de tareas.",
+      [
+       "Siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ]
+     ]
+    ]
+   },
+   {
+    "title": "Cultura",
+    "qs": [
+     [
+      "Tengo claras las diferencias entre Valores, Competencias y No-Negociables en la empresa.",
+      [
+       "Totalmente",
+       "Más o menos",
+       "Para nada"
+      ]
+     ],
+     [
+      "Mis cuatro No-Negociables top son:",
+      null
+     ],
+     [
+      "¿Cuáles son los valores más difíciles de vivir en tu rol? ¿Qué los hace desafiantes?",
+      null
+     ],
+     [
+      "¿Creés que la cultura de la empresa refleja los valores declarados? ¿Tenés algún ejemplo que quieras compartir?",
+      null
+     ],
+     [
+      "¿Qué tres palabras describen mejor la cultura de la empresa hoy en día?",
+      null
+     ],
+     [
+      "¿Dónde ves gaps entre lo que decimos que valoramos y lo que realmente hacemos?",
+      null
+     ]
+    ]
+   }
+  ]
+ }
+];
+
+function crearFormularios() {
+  DEFS.forEach(function (d) {
+    var form = FormApp.create(d.title);
+    form.setDescription(d.purpose + "\n\nLas respuestas son completamente anónimas.");
+    form.setCollectEmail(false);
+    form.setProgressBar(true);
+    d.sections.forEach(function (s, si) {
+      form.addPageBreakItem().setTitle(s.title);
+      s.qs.forEach(function (q) {
+        if (q[1]) form.addMultipleChoiceItem().setTitle(q[0]).setChoiceValues(q[1]).setRequired(true);
+        else form.addParagraphTextItem().setTitle(q[0]);
+      });
+      if (si === d.sections.length - 1) form.addTextItem().setTitle("Nombre (opcional)");
+    });
+    var hoja = SpreadsheetApp.create(d.title + " (respuestas)");
+    form.setDestination(FormApp.DestinationType.SPREADSHEET, hoja.getId());
+    if (form.setPublished) form.setPublished(true);
+    Logger.log(d.id + " | " + form.getPublishedUrl());
+  });
+}
