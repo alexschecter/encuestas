@@ -258,6 +258,43 @@ function torta_(q, k, cols) {
   } catch (e) { return null; }
 }
 
+// Qué mide cada dimensión, en pocas palabras (para el gráfico de dimensiones).
+const DESC_DIMENSION = {
+  "Mis prácticas de comunicación": "Cómo me comunico yo con otras áreas",
+  "Cultura de equipo y colaboración": "Reuniones, feedback, fricción y reconocimiento",
+  "Cómo fluye la comunicación": "Claridad de objetivos y cómo se resuelven confusiones",
+  "Patrones y percepciones": "Cómo se decide y cuándo se comparte información",
+  "Percepciones del entorno": "Cómo colaboran las otras áreas con la mía",
+  "Percepción sobre otras áreas": "Si otras áreas se anticipan, se interesan y apoyan",
+};
+
+// Una pregunta con una torta por grupo y el % de cada respuesta (alto: 150).
+function bloquePregunta_(ctx, sl, q, y) {
+  const gs = ctx.d.grupos, cols = ESCALA[q.opciones.length] || ESCALA[4];
+  caja_(sl, q.titulo, 30, y, 660, 34, { size: 13, bold: true, color: COL.navy });
+  gs.forEach(function (g, gi) {
+    const x0 = 30 + gi * 335, c = q.por[g.k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0);
+    caja_(sl, g.nombre + " · " + n + (n === 1 ? " respuesta" : " respuestas"), x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
+    const img = torta_(q, g.k, cols);
+    if (img) sl.insertImage(img, x0, y + 56, 90, 90);
+    else apilada_(sl, q, g.k, x0, y + 90, 90, 20);
+    const largo = q.opciones.some(function (o) { return o.length > 30; });
+    const lineas = q.opciones.map(function (o, k) { return "●  " + pct_(c[k], n) + "%  " + o; });
+    const ley = caja_(sl, lineas.join("\n"), x0 + 96, y + 54, 236, 72, { size: largo ? 8.5 : 10 }).getText();
+    let p = 0;
+    lineas.forEach(function (t, k) { ley.getRange(p, p + 1).getTextStyle().setForegroundColor(cols[k] || COL.mute); p += t.length + 1; });
+    const v = q.por[g.k].puntaje;
+    caja_(sl, "Puntaje " + (v === null ? "–" : v + "/100 · " + banda_(v).t), x0 + 96, y + 126, 230, 20, { size: 10, color: COL.mute });
+  });
+}
+// Varias preguntas, de a 2 por diapositiva, con el mismo título.
+function paginasPreguntas_(ctx, titulo, sub, lista) {
+  for (let i = 0; i < lista.length; i += 2) {
+    const sl = contenido_(ctx, titulo, sub);
+    lista.slice(i, i + 2).forEach(function (q, j) { bloquePregunta_(ctx, sl, q, (sub ? 80 : 66) + j * 148); });
+  }
+}
+
 // ── Datos ──
 function puntos_(j, n) { return n > 1 ? (n - 1 - j) / (n - 1) * 100 : 100; }
 function puntaje_(conteos) {
@@ -373,7 +410,8 @@ function barras_(sl, d, filas, l, t, w, h, anchoEtiqueta) {
   const top = t + 18, alto = (h - 18) / filas.length, barH = Math.min(12, (alto - 10) / gs.length), maxW = w - anchoEtiqueta - 40;
   filas.forEach(function (f, i) {
     const y = top + i * alto;
-    caja_(sl, f.etiqueta, l, y, anchoEtiqueta - 8, alto, { size: 10.5, color: COL.ink, align: "end", v: "middle" });
+    const et = caja_(sl, f.etiqueta + (f.desc ? "\n" + f.desc : ""), l, y, anchoEtiqueta - 8, alto, { size: 10.5, color: COL.ink, align: "end", v: "middle" });
+    if (f.desc) { const tr = et.getText(); tr.getRange(0, f.etiqueta.length).getTextStyle().setBold(true); tr.getRange(f.etiqueta.length + 1, f.etiqueta.length + 1 + f.desc.length).getTextStyle().setFontSize(8.5).setForegroundColor(COL.mute); }
     const bloque = barH * gs.length + 2 * (gs.length - 1), y0 = y + (alto - bloque) / 2;
     gs.forEach(function (x, gi) {
       const v = f.valores[x.k];
@@ -497,8 +535,8 @@ function construirResumen_(ctx) {
     const mmMas = d.secciones.filter(function (s) { return s.por.mm > s.por.cl; }).length;
     titulo4 = mmMas > d.secciones.length / 2 ? "Los mandos medios ven la colaboración más positiva" : mmMas < d.secciones.length / 2 ? "Dirección ve la colaboración más positiva" : "Puntaje por dimensión";
   }
-  sl = contenido_(ctx, titulo4);
-  barras_(sl, d, d.secciones.map(function (s) { return { etiqueta: s.titulo, valores: s.por }; }), 30, 80, 470, 285, 170);
+  sl = contenido_(ctx, titulo4, "Puntaje de 0 a 100 de cada dimensión: el promedio de sus preguntas.");
+  barras_(sl, d, d.secciones.map(function (s) { return { etiqueta: s.titulo, desc: DESC_DIMENSION[s.titulo] || (s.qs.length + (s.qs.length === 1 ? " pregunta" : " preguntas")), valores: s.por }; }), 30, 86, 480, 280, 240);
   tarjeta_(sl, 520, 80, 170, 285);
   let lado = ["Lo que se ve", "La dimensión mejor valorada es " + top.titulo + " y la más baja, " + low.titulo + "."];
   if (dos) {
@@ -511,35 +549,14 @@ function construirResumen_(ctx) {
   // 5 y 6. Fortalezas y prioridades
   const qs = d.preguntas.filter(function (q) { return q.opciones && q.puntaje !== null; });
   const ord = qs.slice().sort(function (a, b) { return b.puntaje - a.puntaje; });
-  const tarjetasPreguntas = function (titulo, sub, lista) {
-    const s = contenido_(ctx, titulo, sub);
-    lista.forEach(function (q, i) {
-      const x = 30 + (i % 2) * 335, y = 84 + Math.floor(i / 2) * 142;
-      tarjeta_(s, x, y, 325, 130);
-      caja_(s, q.titulo, x + 10, y + 6, 305, 70, { size: 13 });
-      gs.forEach(function (g, gi) {
-        const v = q.por[g.k].puntaje, b = banda_(v), xx = x + 12 + gi * 156;
-        caja_(s, g.nombre, xx, y + 78, 150, 18, { size: 10, color: COL.mute });
-        circulo_(s, xx + 4, y + 104, 11, b.c);
-        caja_(s, (v === null ? "–" : v + "/100") + "  ·  " + b.t, xx + 18, y + 96, 136, 26, { size: 12, bold: true, color: COL.navy, v: "middle" });
-      });
-    });
-  };
-  tarjetasPreguntas("Fortalezas: lo mejor valorado", "Las preguntas con mayor puntaje promedio.", ord.slice(0, 4));
-  tarjetasPreguntas("Prioridades: lo que más necesita atención", "Las preguntas con menor puntaje promedio.", ord.slice(-4).reverse());
+  paginasPreguntas_(ctx, "Fortalezas: lo mejor valorado", "Las preguntas con mayor puntaje: cómo respondió cada grupo.", ord.slice(0, 4));
+  paginasPreguntas_(ctx, "Prioridades: lo que más necesita atención", "Las preguntas con menor puntaje: cómo respondió cada grupo.", ord.slice(-4).reverse());
 
   // 7. Brechas
   if (dos) {
     const brechas = qs.filter(function (q) { return q.por.mm.puntaje !== null && q.por.cl.puntaje !== null; })
       .sort(function (a, b) { return Math.abs(b.por.mm.puntaje - b.por.cl.puntaje) - Math.abs(a.por.mm.puntaje - a.por.cl.puntaje); }).slice(0, 5);
-    if (brechas.length) {
-      sl = contenido_(ctx, "Donde las miradas más se separan");
-      barras_(sl, d, brechas.map(function (q) { return { etiqueta: q.titulo, valores: { mm: q.por.mm.puntaje, cl: q.por.cl.puntaje } }; }), 30, 80, 470, 285, 220);
-      tarjeta_(sl, 520, 80, 170, 285);
-      const b = brechas[0];
-      caja_(sl, "Para conversar", 530, 90, 150, 22, { size: 14, bold: true, color: COL.navy });
-      caja_(sl, "En \"" + b.titulo + "\", la respuesta más elegida por mandos medios fue \"" + masElegida_(b, "mm") + "\" y por Dirección \"" + masElegida_(b, "cl") + "\".\n\n¿Qué ve cada nivel que el otro no ve?", 530, 114, 150, 240, { size: 11.5 });
-    }
+    if (brechas.length) paginasPreguntas_(ctx, "Donde las miradas más se separan", "Las preguntas con más diferencia entre los dos grupos. ¿Qué ve cada nivel que el otro no ve?", brechas.slice(0, 4));
   }
 
   // 7b. Palabras más repetidas (pregunta abierta de "palabras", si hay respuestas)
@@ -596,22 +613,7 @@ function construirDetalle_(ctx) {
   d.secciones.forEach(function (s) {
     for (let i = 0; i < s.qs.length; i += 2) {
       sl = contenido_(ctx, s.titulo);
-      s.qs.slice(i, i + 2).forEach(function (q, j) {
-        const y = 66 + j * 152, cols = ESCALA[q.opciones.length] || ESCALA[4];
-        caja_(sl, q.titulo, 30, y, 660, 34, { size: 13, bold: true, color: COL.navy });
-        gs.forEach(function (g, gi) {
-          const x0 = 30 + gi * 335, c = q.por[g.k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0);
-          caja_(sl, g.nombre + " · " + n + (n === 1 ? " respuesta" : " respuestas"), x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
-          const img = torta_(q, g.k, cols);
-          if (img) sl.insertImage(img, x0, y + 56, 90, 90);
-          else apilada_(sl, q, g.k, x0, y + 90, 90, 20);
-          const ley = caja_(sl, q.opciones.map(function (o, k) { return "●  " + o + "  " + pct_(c[k], n) + "%"; }).join("\n"), x0 + 96, y + 54, 230, 72, { size: 10 }).getText();
-          let p = 0;
-          q.opciones.forEach(function (o, k) { ley.getRange(p, p + 1).getTextStyle().setForegroundColor(cols[k] || COL.mute); p += ("●  " + o + "  " + pct_(c[k], n) + "%").length + 1; });
-          const v = q.por[g.k].puntaje;
-          caja_(sl, "Puntaje " + (v === null ? "–" : v + "/100 · " + banda_(v).t), x0 + 96, y + 126, 230, 20, { size: 10, color: COL.mute });
-        });
-      });
+      s.qs.slice(i, i + 2).forEach(function (q, j) { bloquePregunta_(ctx, sl, q, 66 + j * 152); });
     }
   });
 
