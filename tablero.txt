@@ -489,7 +489,7 @@ function construirDetalle_(ctx) {
           apilada_(sl, q, g.k, 154, yy + 2, 440, 22);
           const v = q.por[g.k].puntaje;
           circulo_(sl, 606, yy + 7, 11, banda_(v).c);
-          caja_(sl, "Puntaje " + (v === null ? "–" : v), 620, yy, 80, 26, { size: 11, bold: true, v: "middle" });
+          caja_(sl, "Puntaje " + (v === null ? "–" : v + "/100"), 620, yy, 90, 26, { size: 11, bold: true, v: "middle" });
         });
         const cols = ESCALA[q.opciones.length] || ESCALA[4];
         const texto = q.opciones.map(function (o) { return "■ " + o; }).join("    ");
