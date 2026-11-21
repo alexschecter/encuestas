@@ -32,7 +32,7 @@ function doGet() {
   let remitentes = [Session.getEffectiveUser().getEmail()];
   try { remitentes = remitentes.concat(GmailApp.getAliases()); } catch (e) {}
   const config = { catalogo: CATALOGO, asunto: props.getProperty("asunto") || ASUNTO_INICIAL, mensaje: props.getProperty("mensaje") || MENSAJE_INICIAL,
-    remitentes: remitentes, desde: props.getProperty("desde") || "" };
+    remitentes: remitentes, desde: props.getProperty("desde") || "", nombre: props.getProperty("nombre") || "", responderA: props.getProperty("responderA") || "" };
   return HtmlService.createHtmlOutput(PAGINA.replace("__CONFIG__", JSON.stringify(config).replace(/</g, "\\u003c")))
     .setTitle("Tablero de encuestas")
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
@@ -55,14 +55,14 @@ function buscarFormulario_(enc) {
 }
 
 // Guarda el asunto y el mensaje que escribiste en el tablero, para la próxima vez.
-function guardarMensaje(asunto, mensaje) {
-  PropertiesService.getUserProperties().setProperties({ asunto: String(asunto || ""), mensaje: String(mensaje || "") });
+function guardarMensaje(asunto, mensaje, nombre, responderA) {
+  PropertiesService.getUserProperties().setProperties({ asunto: String(asunto || ""), mensaje: String(mensaje || ""), nombre: String(nombre || ""), responderA: String(responderA || "") });
   return true;
 }
 
 // Envía el mensaje desde tu cuenta de Gmail, un email por persona.
 // "desde" puede ser tu Gmail o cualquier dirección que tengas configurada en Gmail como "Enviar como" (por ejemplo, la de tu dominio).
-function enviarEmails(destinatarios, asunto, cuerpo, desde) {
+function enviarEmails(destinatarios, asunto, cuerpo, desde, nombre, responderA) {
   const lista = String(destinatarios || "").split(/[\s,;]+/).map(function (x) { return x.trim(); }).filter(Boolean);
   const validos = lista.filter(function (x) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); });
   const invalidos = lista.filter(function (x) { return validos.indexOf(x) < 0; });
@@ -71,6 +71,8 @@ function enviarEmails(destinatarios, asunto, cuerpo, desde) {
   if (validos.length > cupo) throw new Error("Hoy podés enviar " + cupo + " emails más desde el tablero (límite diario de Google).");
   const opciones = {};
   if (desde && GmailApp.getAliases().indexOf(desde) >= 0) opciones.from = desde;
+  if (nombre) opciones.name = String(nombre);
+  if (responderA && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(responderA)) opciones.replyTo = String(responderA).trim();
   PropertiesService.getUserProperties().setProperty("desde", desde || "");
   validos.forEach(function (to) { GmailApp.sendEmail(to, asunto, cuerpo, opciones); });
   return JSON.stringify({ enviados: validos.length, invalidos: invalidos });
@@ -598,7 +600,9 @@ a.btn { text-decoration:none; display:inline-block; }
   <label for="mensaje">Mensaje</label><div><textarea id="mensaje" rows="8"></textarea><p class="muted hint">Podés usar {cliente}, {enlace} y {minutos}: se completan solos. Tu texto se guarda para la próxima vez.</p></div>
 </div>
 <div class="row wrapr"><button class="btn" type="button" id="copMsg">Copiar mensaje</button><a class="btn" id="wa" target="_blank" rel="noopener">Abrir en WhatsApp</a></div>
-<div class="form"><label for="desde">Enviar desde</label><div><select id="desde"></select><p class="muted hint">Para usar la dirección de tu dominio, agregala en Gmail como "Enviar como" y aparece acá.</p></div><label for="para">Enviar por email a</label><div><textarea id="para" rows="3" placeholder="ana@empresa.com, juan@empresa.com"></textarea><p class="muted hint">Una o varias direcciones. Cada persona recibe su propio email.</p></div></div>
+<div class="form"><label for="nombre">Tu nombre</label><input id="nombre" placeholder="Como lo ven quienes reciben el email">
+<label for="responderA">Las respuestas llegan a</label><div><input id="responderA" type="email" placeholder="tu@dominio.com"><p class="muted hint">El email sale de tu Gmail con tu nombre; si alguien responde, la respuesta llega a esta dirección.</p></div>
+<label for="desde" id="desdeL">Enviar desde</label><select id="desde"></select><label for="para">Enviar por email a</label><div><textarea id="para" rows="3" placeholder="ana@empresa.com, juan@empresa.com"></textarea><p class="muted hint">Una o varias direcciones. Cada persona recibe su propio email.</p></div></div>
 <div class="row wrapr"><button class="btn primary" type="button" id="mail">Enviar por email</button><span id="envSt" class="muted" aria-live="polite"></span></div>
 </details>
 <div class="top" style="padding:0"><label class="muted" for="cliente">Cliente</label><select id="cliente" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px"></select>
@@ -689,13 +693,15 @@ function slug(t){ return t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLow
 var $ = function(id){ return document.getElementById(id); };
 $("encSel").innerHTML = CONFIG.catalogo.map(function(e, i){ return '<option value="'+i+'">'+esc(e.nombre)+'</option>'; }).join("");
 $("asunto").value = CONFIG.asunto; $("mensaje").value = CONFIG.mensaje;
+$("nombre").value = CONFIG.nombre; $("responderA").value = CONFIG.responderA;
+if (CONFIG.remitentes.length < 2) { $("desde").hidden = true; $("desdeL").hidden = true; }
 $("desde").innerHTML = CONFIG.remitentes.map(function(r, i){ return '<option value="'+(i ? esc(r) : "")+'"'+(r === CONFIG.desde ? " selected" : "")+'>'+esc(r)+'</option>'; }).join("");
 function enlace(){ var c = slug($("nuevo").value); return c ? BASE + c + "/" + CONFIG.catalogo[$("encSel").value].id + $("grpSel").value : ""; }
 function texto(t){ var e = CONFIG.catalogo[$("encSel").value]; return t.split("{cliente}").join($("nuevo").value.trim() || "tu empresa").split("{enlace}").join(enlace()).split("{minutos}").join(e.minutos); }
 function actualizar(){ var u = enlace(); $("enlace").value = u; $("wa").href = "https://wa.me/?text=" + encodeURIComponent(texto($("mensaje").value)); $("wa").style.pointerEvents = u ? "" : "none"; $("wa").style.opacity = u ? "" : ".5"; pend = 0; $("mail").textContent = "Enviar por email"; }
 ["encSel","grpSel","nuevo","mensaje","para"].forEach(function(id){ $(id).addEventListener("input", actualizar); $(id).addEventListener("change", actualizar); });
 var guardarT = null;
-["asunto","mensaje"].forEach(function(id){ $(id).addEventListener("input", function(){ clearTimeout(guardarT); guardarT = setTimeout(function(){ google.script.run.guardarMensaje($("asunto").value, $("mensaje").value); }, 1200); }); });
+["asunto","mensaje","nombre","responderA"].forEach(function(id){ $(id).addEventListener("input", function(){ clearTimeout(guardarT); guardarT = setTimeout(function(){ google.script.run.guardarMensaje($("asunto").value, $("mensaje").value, $("nombre").value, $("responderA").value); }, 1200); }); });
 function copiar(txt, btn){ var ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand("copy"); } catch (x) {} document.body.removeChild(ta); if (!ok && navigator.clipboard) navigator.clipboard.writeText(txt); var o = btn.textContent; btn.textContent = "Copiado"; setTimeout(function(){ btn.textContent = o; }, 1500); }
 $("copEnl").onclick = function(){ if (enlace()) copiar(enlace(), this); };
 $("copMsg").onclick = function(){ if (!enlace()) { $("envSt").textContent = "Escribí el nombre del cliente."; return; } copiar(texto($("mensaje").value), this); };
@@ -710,7 +716,7 @@ $("mail").onclick = function(){
   google.script.run.withSuccessHandler(function(j){ var r = JSON.parse(j); b.disabled = false; pend = 0; b.textContent = "Enviar por email";
     st.textContent = "Listo: enviado a " + r.enviados + (r.enviados === 1 ? " persona." : " personas.") + (r.invalidos.length ? " No enviado (dirección inválida): " + r.invalidos.join(", ") : ""); $("para").value = ""; })
     .withFailureHandler(function(e){ b.disabled = false; pend = 0; b.textContent = "Enviar por email"; st.innerHTML = '<span class="err">No se pudo enviar: '+esc(e.message)+'</span>'; })
-    .enviarEmails($("para").value, texto($("asunto").value), texto($("mensaje").value), $("desde").value);
+    .enviarEmails($("para").value, texto($("asunto").value), texto($("mensaje").value), $("desde").value, $("nombre").value.trim(), $("responderA").value.trim());
 };
 actualizar();
 document.getElementById("informe").onclick = function(){
