@@ -214,8 +214,8 @@ function generarInforme(cliente, tipo) {
   const ctx = { pres: pres, d: d, pag: 0, imgs: imagenes_() };
   const inicial = pres.getSlides()[0];
   construirResumen_(ctx);
-  const nResumen = ctx.pag;
   construirDetalle_(ctx);
+  const nResumen = ctx.nCerradas; // el Resumen incluye las tortas por pregunta, sin las respuestas abiertas
   inicial.remove();
   pres.saveAndClose();
   const fCompleto = DriveApp.getFileById(pres.getId());
@@ -609,6 +609,8 @@ function construirDetalle_(ctx) {
       });
     }
   });
+
+  ctx.nCerradas = ctx.pag;
 
   // preguntas abiertas
   d.preguntas.filter(function (q) { return !q.opciones; }).forEach(function (q) {
