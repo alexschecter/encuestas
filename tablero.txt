@@ -86,7 +86,7 @@ function emailHtml_(cuerpo, f) {
   const web = f.web ? f.web.replace(/^https?:\/\//, "") : "", li = f.linkedin ? f.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, "").replace(/\/$/, "") : "";
   const datos = fila("&#127760;", web, "https://" + web) + fila("&#9993;", f.email, "mailto:" + f.email) + fila("&#9742;", f.tel, "tel:" + String(f.tel || "").replace(/[^+\d]/g, "")) + fila("in", li, "https://www.linkedin.com/in/" + li);
   const firma = '<table cellpadding="0" cellspacing="0" border="0" style="margin-top:26px"><tr>' +
-    '<td style="padding-right:16px;vertical-align:middle"><img src="cid:logo" width="145" alt="Alex Schecter Coaching" style="display:block;border:0"></td>' +
+    '<td style="padding-right:16px;vertical-align:middle"><img src="cid:logo" width="120" height="48" alt="Alex Schecter Coaching" style="display:block;border:0;width:120px;height:48px;max-width:120px"></td>' +
     (datos ? '<td style="vertical-align:middle;border-left:1px solid #e3e3e3;padding-left:14px"><table cellpadding="0" cellspacing="0" border="0">' + datos + '</table></td>' : "") + '</tr></table>';
   return '<div style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#222222;max-width:560px">' + parrafos + firma + '</div>';
 }
