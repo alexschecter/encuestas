@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Diagnósticos de Equipo</title>
+<meta name="robots" content="noindex">
 <style>[hidden]{display:none!important}body{margin:0}</style>
 </head>
 <body>
-<title>Diagnósticos de Equipo</title>
+<title>Diagnóstico de Equipo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
@@ -171,10 +171,10 @@ textarea { width: 100%; min-height: 110px; border: 1px solid var(--line); border
 
 <div class="wrap">
   <header class="top">
-    <button class="brand" id="homeBtn" type="button" aria-label="Volver al inicio">
+    <div class="brand">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8" cy="12" r="5.5" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="12" r="5.5" stroke="var(--accent)" stroke-width="2"/></svg>
-      Diagnósticos de Equipo
-    </button>
+      Diagnóstico de Equipo
+    </div>
   </header>
   <main id="app"></main>
 </div>
@@ -223,24 +223,24 @@ const COLAB_SECTIONS = [
   ]},
 ];
 
-const CULTURE_SECTION = { id: "culture", title: "BeloCultura", hint: "Valores, competencias y No-Negociables de Belo. Las preguntas abiertas son opcionales.", qs: [
-  ["Tengo claras las diferencias entre Valores, Competencias y No-Negociables en Belo.", ["Totalmente","Más o menos","Para nada"]],
+const CULTURE_SECTION = { id: "culture", title: "Cultura", hint: "Valores, competencias y No-Negociables de la empresa. Las preguntas abiertas son opcionales.", qs: [
+  ["Tengo claras las diferencias entre Valores, Competencias y No-Negociables en la empresa.", ["Totalmente","Más o menos","Para nada"]],
   ["Mis cuatro No-Negociables top son:", null],
   ["¿Cuáles son los valores más difíciles de vivir en tu rol? ¿Qué los hace desafiantes?", null],
-  ["¿Creés que la cultura de Belo refleja los valores declarados? ¿Tenés algún ejemplo que quieras compartir?", null],
-  ["¿Qué tres palabras describen mejor la cultura de Belo hoy en día?", null],
+  ["¿Creés que la cultura de la empresa refleja los valores declarados? ¿Tenés algún ejemplo que quieras compartir?", null],
+  ["¿Qué tres palabras describen mejor la cultura de la empresa hoy en día?", null],
   ["¿Dónde ves gaps entre lo que decimos que valoramos y lo que realmente hacemos?", null],
 ]};
 
 const PURPOSE_COLAB = "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas. Tu perspectiva es clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.";
+const PURPOSE_CULTURA = "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas, y el estado de la cultura de la empresa. Tus perspectivas son clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.";
+// Cada encuesta tiene su propio enlace: https://alexschecter.github.io/diagnosticos/#<id>
+// Las versiones "-direccion" son para el equipo directivo (C-level); sus respuestas van a su propio Google Form.
 const DIAGNOSTICS = [
-  { id: "colab", title: "Colaboración Interfuncional", minutes: "5–7 min",
-    blurb: "Cómo fluyen la colaboración y la comunicación entre áreas: fortalezas, silos y oportunidades.",
-    purpose: PURPOSE_COLAB, sections: COLAB_SECTIONS },
-  { id: "colab-cultura", title: "Colaboración Interfuncional & Cultura", minutes: "10 min",
-    blurb: "El diagnóstico de colaboración más una sección sobre la cultura de Belo y sus valores.",
-    purpose: "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas, y el estado de la cultura de Belo. Tus perspectivas son clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.",
-    sections: [...COLAB_SECTIONS, CULTURE_SECTION] },
+  { id: "colab", title: "Colaboración Interfuncional", minutes: "5–7 min", purpose: PURPOSE_COLAB, sections: COLAB_SECTIONS },
+  { id: "colab-cultura", title: "Colaboración Interfuncional & Cultura", minutes: "10 min", purpose: PURPOSE_CULTURA, sections: [...COLAB_SECTIONS, CULTURE_SECTION] },
+  { id: "colab-direccion", title: "Colaboración Interfuncional", minutes: "5–7 min", purpose: PURPOSE_COLAB, sections: COLAB_SECTIONS },
+  { id: "colab-cultura-direccion", title: "Colaboración Interfuncional & Cultura", minutes: "10 min", purpose: PURPOSE_CULTURA, sections: [...COLAB_SECTIONS, CULTURE_SECTION] },
 ];
 
 // ---------- Envío de respuestas ----------
@@ -250,6 +250,10 @@ const COLAB_ENTRIES = [399240661,1514542835,1508492944,207375225,2023814821,8681
 const SUBMIT = {
   "colab": { formId: "1FAIpQLScXFn-QiMze6zwby-uIF4_QrqD-yKrUYaQxnfDZbD357LdTlg", pages: 7, nameEntry: null, entries: COLAB_ENTRIES },
   "colab-cultura": { formId: "1FAIpQLSen_m6SKq5MabHCaFJQfXOuZMHDI2Rga049r-jdSKlMcVpdLw", pages: 8, nameEntry: null,
+    entries: [...COLAB_ENTRIES, 676983646,364431460,315427670,890011333,1392156510,1769054710] },
+  // Formularios del equipo directivo: pendientes (formId null = el enlace muestra que la encuesta todavía no está abierta).
+  "colab-direccion": { formId: null, pages: 7, nameEntry: null, entries: COLAB_ENTRIES },
+  "colab-cultura-direccion": { formId: null, pages: 8, nameEntry: null,
     entries: [...COLAB_ENTRIES, 676983646,364431460,315427670,890011333,1392156510,1769054710] },
 };
 
@@ -277,33 +281,30 @@ const go = (view) => { state.view = view; save(); render(); window.scrollTo({ to
 function renderHome() {
   app.innerHTML = `
     <section class="hero">
-      <span class="eyebrow">Encuestas internas · anónimas</span>
-      <h1>¿Cómo trabajamos entre áreas?</h1>
-      <p>Elegí un diagnóstico. Vas a responder una sección a la vez. Al final elegís si enviar tus respuestas de forma anónima.</p>
-    </section>
-    <div class="cards">
-      ${DIAGNOSTICS.map(d => {
-        const closed = d.sections.flatMap(s => s.qs).filter(q => q[1]).length;
-        const open = d.sections.flatMap(s => s.qs).filter(q => !q[1]).length;
-        const draft = store.get(key(d.id));
-        const started = draft && Object.keys(draft.answers || {}).length;
-        return `<button class="dcard" type="button" data-d="${d.id}">
-          <div class="meta"><span class="chip accent">${d.minutes}</span><span class="chip">${d.sections.length} secciones</span><span class="chip">${closed} preguntas${open ? ` + ${open} abiertas` : ""}</span></div>
-          <h2>${esc(d.title)}</h2>
-          <p class="muted">${esc(d.blurb)}</p>
-          <p class="sections">${d.sections.map(s => esc(s.title)).join(" · ")}</p>
-          ${started ? `<span class="resume">Tenés respuestas guardadas. Podés retomar donde quedaste.</span>` : ""}
-          <span class="go">${started ? "Continuar" : "Empezar"} →</span>
-        </button>`;
-      }).join("")}
-    </div>`;
-  app.querySelectorAll("[data-d]").forEach(b => b.onclick = () => {
-    const d = DIAGNOSTICS.find(x => x.id === b.dataset.d);
-    const draft = store.get(key(d.id));
-    state = { view: "intro", diag: d, sec: 0, answers: {} };
-    if (draft && Object.keys(draft.answers || {}).length) { state.answers = draft.answers; state.sec = draft.sec || 0; state.view = "survey"; }
-    render(); window.scrollTo({ top: 0 });
-  });
+      <span class="eyebrow">Encuesta</span>
+      <h1>Abrí el enlace que recibiste</h1>
+      <p>Esta página funciona con el enlace personal de tu encuesta. Si llegaste acá sin él, pedíselo a quien te invitó a responder.</p>
+    </section>`;
+}
+
+function renderClosed() {
+  app.innerHTML = `
+    <section class="hero">
+      <span class="eyebrow">${esc(state.diag.title)}</span>
+      <h1>Esta encuesta todavía no está abierta</h1>
+      <p>Volvé a intentarlo más tarde con el mismo enlace.</p>
+    </section>`;
+}
+
+function startFromLink() {
+  const d = DIAGNOSTICS.find(x => x.id === decodeURIComponent(location.hash.slice(1)));
+  if (!d) { state = { view: "home", diag: null, sec: 0, answers: {} }; return render(); }
+  const draft = store.get(key(d.id));
+  state = { view: "intro", diag: d, sec: 0, answers: {} };
+  if (!SUBMIT[d.id].formId) state.view = "closed";
+  else if (store.get("sent-" + d.id)) state.view = "thanks";
+  else if (draft && Object.keys(draft.answers || {}).length) { state.answers = draft.answers; state.sec = draft.sec || 0; state.view = "survey"; }
+  render(); window.scrollTo({ top: 0 });
 }
 
 function renderIntro() {
@@ -322,10 +323,9 @@ function renderIntro() {
           <li>Respondé con honestidad: tu experiencia es esencial.</li>
         </ul>
       </div>
-      <div class="row"><button class="btn" id="start" type="button">Empezar</button><button class="btn ghost" id="back" type="button">Volver</button></div>
+      <div class="row"><button class="btn" id="start" type="button">Empezar</button></div>
     </section>`;
   document.getElementById("start").onclick = () => go("survey");
-  document.getElementById("back").onclick = () => go("home");
 }
 
 function renderSurvey(showMissing = false) {
@@ -363,7 +363,7 @@ function renderSurvey(showMissing = false) {
       }).join("")}
     </div>
     <div class="nav">
-      ${state.sec > 0 ? `<button class="btn ghost" id="prev" type="button">← Anterior</button>` : `<button class="btn ghost" id="prev" type="button">← Inicio</button>`}
+      ${state.sec > 0 ? `<button class="btn ghost" id="prev" type="button">← Anterior</button>` : `<button class="btn ghost" id="prev" type="button">← Volver</button>`}
       <span class="spacer"></span>
       <span class="warn" id="warn" ${showMissing ? "" : "hidden"}>Faltan respuestas en esta sección.</span>
       <button class="btn" id="next" type="button">${last ? "Revisar y enviar →" : "Siguiente →"}</button>
@@ -375,7 +375,7 @@ function renderSurvey(showMissing = false) {
     document.getElementById("count").textContent = `${doneNow} de ${total} respondidas`;
   });
   app.querySelectorAll("textarea").forEach(t => t.oninput = () => { state.answers[t.dataset.q] = t.value; save(); });
-  document.getElementById("prev").onclick = () => { if (state.sec > 0) { state.sec--; go("survey"); } else go("home"); };
+  document.getElementById("prev").onclick = () => { if (state.sec > 0) { state.sec--; go("survey"); } else go("intro"); };
   document.getElementById("next").onclick = () => {
     const missing = s.qs.map((q, i) => q[1] && typeof state.answers[qid(s.id, i)] !== "number" ? qid(s.id, i) : null).filter(Boolean);
     if (missing.length) { renderSurvey(true); document.getElementById("q-" + missing[0]).scrollIntoView({ behavior: "smooth", block: "center" }); return; }
@@ -438,7 +438,7 @@ function renderSubmit() {
     const name = state.anon === false ? (state.name || "").trim() : "";
     if (state.anon === false && !name) { err.textContent = "Escribí tu nombre o elegí enviar de forma anónima."; err.hidden = false; return; }
     btn.disabled = true; btn.textContent = "Enviando…"; err.hidden = true;
-    try { await sendAnswers(d, name); store.del(key(d.id)); state.answers = {}; go("thanks"); }
+    try { await sendAnswers(d, name); store.del(key(d.id)); store.set("sent-" + d.id, true); state.answers = {}; go("thanks"); }
     catch { btn.disabled = false; btn.textContent = "Reintentar"; err.textContent = "No se pudieron enviar. Revisá tu conexión e intentá de nuevo."; err.hidden = false; }
   };
 }
@@ -450,9 +450,8 @@ function renderThanks() {
       <span class="eyebrow">${esc(d.title)}</span>
       <h1>¡Gracias por responder!</h1>
       <p class="muted" style="font-size:1.05rem;max-width:56ch">Tus respuestas se enviaron. Con las respuestas de todo el equipo vamos a armar el diagnóstico y compartir los resultados.</p>
-      <div class="row"><button class="btn ghost" id="home2" type="button">Volver al inicio</button></div>
+      <p class="muted">Ya podés cerrar esta página.</p>
     </section>`;
-  document.getElementById("home2").onclick = () => go("home");
 }
 
 function render() {
@@ -461,9 +460,10 @@ function render() {
   if (state.view === "survey") return renderSurvey();
   if (state.view === "submit") return renderSubmit();
   if (state.view === "thanks") return renderThanks();
+  if (state.view === "closed") return renderClosed();
 }
-document.getElementById("homeBtn").onclick = () => { state.view = "home"; render(); window.scrollTo({ top: 0 }); };
-render();
+window.addEventListener("hashchange", startFromLink);
+startFromLink();
 </script>
 
 </body>
