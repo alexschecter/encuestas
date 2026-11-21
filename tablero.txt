@@ -1,0 +1,186 @@
+/**
+ * Tablero en vivo de las encuestas de colaboración.
+ * Lee las respuestas directamente de tus 4 Google Forms. Solo vos podés verlo.
+ *
+ * Cómo instalarlo (una sola vez):
+ * 1. En script.google.com, abrí el proyecto donde pegaste el script anterior (o creá uno nuevo).
+ * 2. Borrá todo el código, pegá este texto y guardá.
+ * 3. Arriba a la derecha: Implementar → Nueva implementación → ícono de engranaje → Aplicación web.
+ *    Ejecutar como: Yo. Quién tiene acceso: Solo yo. → Implementar.
+ * 4. Autorizá los permisos y abrí la URL de la aplicación web. Guardala en favoritos.
+ */
+
+const ENCUESTAS = [
+  { id: "colab", grupo: "mm", tipo: "colab", publicada: "1FAIpQLSdw22UP7uuRwSkrTQD1imlPlJES1C6a7ySp3IZ32_Mssm5WiQ", titulo: "Colaboración Interfuncional" },
+  { id: "colab-cultura", grupo: "mm", tipo: "cultura", publicada: "1FAIpQLSeZo4DlrN_TQRGZsFcAfm010eUzBjtCfLhXtk4AS7McF1WtpQ", titulo: "Colaboración Interfuncional & Cultura" },
+  { id: "colab-direccion", grupo: "cl", tipo: "colab", publicada: "1FAIpQLSdYrjiiadTVDHMM1k_UjWHmOydehe4FOX_FzWu9iVLSlFQv5g", titulo: "Colaboración Interfuncional (Dirección)" },
+  { id: "colab-cultura-direccion", grupo: "cl", tipo: "cultura", publicada: "1FAIpQLScRCq6HrmR7mYeNIZPfxTtYHTfIQFuahVft5OAid53oxrwDlQ", titulo: "Colaboración Interfuncional & Cultura (Dirección)" },
+];
+
+function doGet() {
+  return HtmlService.createHtmlOutput(PAGINA)
+    .setTitle("Tablero de encuestas")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+}
+
+function buscarFormulario_(enc) {
+  const props = PropertiesService.getScriptProperties();
+  const guardado = props.getProperty(enc.id);
+  if (guardado) { try { return FormApp.openById(guardado); } catch (e) {} }
+  const archivos = DriveApp.getFilesByType(MimeType.GOOGLE_FORMS);
+  while (archivos.hasNext()) {
+    const f = archivos.next();
+    if (f.isTrashed()) continue;
+    try {
+      const form = FormApp.openById(f.getId());
+      if (form.getPublishedUrl().indexOf(enc.publicada) >= 0) { props.setProperty(enc.id, f.getId()); return form; }
+    } catch (e) {}
+  }
+  return null;
+}
+
+function obtenerDatos() {
+  return JSON.stringify(ENCUESTAS.map(function (enc) {
+    const form = buscarFormulario_(enc);
+    if (!form) return { id: enc.id, grupo: enc.grupo, tipo: enc.tipo, titulo: enc.titulo, error: "No encontré este formulario en tu Drive." };
+    const respuestas = form.getResponses();
+    let seccion = "";
+    const preguntas = [];
+    form.getItems().forEach(function (item) {
+      const t = item.getType();
+      if (t === FormApp.ItemType.PAGE_BREAK) { seccion = item.getTitle(); return; }
+      if (item.getTitle() === "Nombre (opcional)") return; // los nombres no se muestran en el tablero
+      if (t === FormApp.ItemType.MULTIPLE_CHOICE) {
+        const opciones = item.asMultipleChoiceItem().getChoices().map(function (c) { return c.getValue(); });
+        preguntas.push({ id: item.getId(), seccion: seccion, titulo: item.getTitle(), opciones: opciones, conteos: opciones.map(function () { return 0; }), textos: null });
+      } else if (t === FormApp.ItemType.PARAGRAPH_TEXT || t === FormApp.ItemType.TEXT) {
+        preguntas.push({ id: item.getId(), seccion: seccion, titulo: item.getTitle(), opciones: null, conteos: null, textos: [] });
+      }
+    });
+    const porId = {};
+    preguntas.forEach(function (p) { porId[p.id] = p; });
+    let ultima = null;
+    respuestas.forEach(function (r) {
+      const ts = r.getTimestamp(); if (!ultima || ts > ultima) ultima = ts;
+      r.getItemResponses().forEach(function (ir) {
+        const p = porId[ir.getItem().getId()]; if (!p) return;
+        const v = ir.getResponse();
+        if (p.opciones) { const j = p.opciones.indexOf(v); if (j >= 0) p.conteos[j]++; }
+        else if (v && String(v).trim()) p.textos.push(String(v).trim());
+      });
+    });
+    return { id: enc.id, grupo: enc.grupo, tipo: enc.tipo, titulo: enc.titulo, n: respuestas.length, ultima: ultima ? ultima.toISOString() : null, preguntas: preguntas };
+  }));
+}
+
+const PAGINA = `<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root { --bg:#f3f5f4; --surface:#fff; --ink:#15201e; --muted:#5b6b67; --line:#d9e0de; --accent:#1f3fbf; --accent-soft:#e3eafc;
+  --c0:#2453c9; --c1:#8fb0ef; --c2:#f1a58f; --c3:#c8452a; --good:#1d8a5a; --mid:#b7791f; --low:#c2410c; }
+* { box-sizing:border-box; } [hidden]{display:none!important}
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 Inter, system-ui, sans-serif; padding:0 max(16px, 3vw) 48px; }
+.wrap { max-width:1100px; margin:0 auto; display:grid; gap:20px; }
+#out { display:grid; gap:20px; }
+h1,h2 { font-family:"Bricolage Grotesque", Inter, sans-serif; margin:0; letter-spacing:-.01em; }
+h1 { font-size:1.9rem; } h2 { font-size:1.3rem; }
+.top { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:20px 0 4px; }
+.top .sp { flex:1; }
+.muted { color:var(--muted); }
+.tabs { display:flex; gap:6px; flex-wrap:wrap; }
+.tab, .btn { border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:8px 16px; font:inherit; font-weight:600; cursor:pointer; }
+.tab[aria-selected="true"] { background:var(--accent); border-color:var(--accent); color:#fff; }
+.panel { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px; display:grid; gap:14px; }
+.kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
+.kpi { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; }
+.kpi b { display:block; font:700 2.2rem/1 "Bricolage Grotesque", Inter, sans-serif; margin-top:6px; }
+.eyebrow { font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+th, td { text-align:left; padding:8px 6px; border-top:1px solid var(--line); }
+th { font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-top:0; }
+.band { padding:2px 8px; border-radius:999px; font-size:.78rem; font-weight:600; }
+.band.good { background:#dcf2e7; color:var(--good); } .band.mid { background:#fbefd6; color:var(--mid); } .band.low { background:#fde4d6; color:var(--low); }
+.q { display:grid; gap:12px; padding:16px 0; border-top:1px solid var(--line); }
+.q:first-of-type { border-top:0; }
+.q h3 { margin:0; font-size:1rem; font-weight:500; }
+.pies { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:16px; }
+.pie { display:flex; gap:16px; align-items:center; }
+.pie svg { width:120px; height:120px; flex:none; }
+.leg { display:grid; gap:4px; font-size:.85rem; }
+.leg span { display:flex; gap:6px; align-items:baseline; }
+.leg i { width:10px; height:10px; border-radius:2px; flex:none; transform:translateY(1px); }
+.leg b { font-variant-numeric:tabular-nums; }
+.glabel { font-weight:600; font-size:.85rem; margin-bottom:4px; }
+blockquote { margin:0 0 6px; padding:8px 12px; background:var(--bg); border-radius:8px; white-space:pre-wrap; font-size:.92rem; }
+.err { color:var(--low); }
+</style></head><body><div class="wrap">
+<div class="top"><div><span class="eyebrow">Solo para vos · se actualiza solo</span><h1>Tablero de encuestas</h1></div><span class="sp"></span>
+<span class="muted" id="stamp">Cargando…</span><button class="btn" id="refresh">Actualizar</button></div>
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" data-tipo="colab" aria-selected="true">Colaboración</button>
+  <button class="tab" role="tab" data-tipo="cultura" aria-selected="false">Colaboración & Cultura</button>
+</div>
+<div id="out"><p class="muted">Leyendo las respuestas de tus formularios…</p></div>
+</div>
+<script>
+var DATA = null, TIPO = "colab";
+var COLORS = ["var(--c0)","var(--c1)","var(--c2)","var(--c3)"], COLORS3 = ["var(--c0)","var(--c1)","var(--c3)"];
+var GROUP = { mm: "Mandos medios", cl: "Dirección (C-level)" };
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+function pts(j,n){ return (n-1-j)/(n-1)*100; }
+function band(s){ return s>=75?["good","Fortaleza"]:s>=50?["mid","En desarrollo"]:["low","Prioridad"]; }
+function pie(counts, colors){
+  var tot = counts.reduce(function(a,b){return a+b;},0), a = -Math.PI/2, out = "", r = 52, cx = 60, cy = 60;
+  if (!tot) return '<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="var(--line)"/><text x="60" y="65" text-anchor="middle" font-size="12" fill="var(--muted)">Sin datos</text></svg>';
+  counts.forEach(function(c,j){ if(!c) return; var f = c/tot;
+    if (f >= 0.9999) { out += '<circle cx="60" cy="60" r="52" fill="'+colors[j]+'"/>'; return; }
+    var a2 = a + f*2*Math.PI, x1 = cx+r*Math.cos(a), y1 = cy+r*Math.sin(a), x2 = cx+r*Math.cos(a2), y2 = cy+r*Math.sin(a2);
+    out += '<path d="M60 60 L'+x1.toFixed(2)+' '+y1.toFixed(2)+' A52 52 0 '+(f>0.5?1:0)+' 1 '+x2.toFixed(2)+' '+y2.toFixed(2)+' Z" fill="'+colors[j]+'" stroke="#fff" stroke-width="2"><title>'+Math.round(f*100)+'%</title></path>';
+    var mid = (a+a2)/2; if (f >= 0.08) out += '<text x="'+(cx+r*0.62*Math.cos(mid)).toFixed(1)+'" y="'+(cy+r*0.62*Math.sin(mid)+4).toFixed(1)+'" text-anchor="middle" font-size="11" font-weight="600" fill="'+(j===1||j===2&&counts.length===4?"#15201e":"#fff")+'">'+Math.round(f*100)+'%</text>';
+    a = a2; });
+  return '<svg viewBox="0 0 120 120" role="img">'+out+'</svg>';
+}
+function scores(s){ var by = {}, order = [];
+  s.preguntas.forEach(function(p){ if(!p.opciones) return; var n = p.conteos.reduce(function(a,b){return a+b;},0); if(!n) return;
+    var sc = p.conteos.reduce(function(a,c,j){ return a + c*pts(j,p.opciones.length); },0)/n;
+    if(!by[p.seccion]) { by[p.seccion] = []; order.push(p.seccion); } by[p.seccion].push(sc); });
+  return order.map(function(k){ return [k, Math.round(by[k].reduce(function(a,b){return a+b;},0)/by[k].length)]; });
+}
+function render(){
+  var sets = DATA.filter(function(s){ return s.tipo === TIPO; });
+  var errs = sets.filter(function(s){ return s.error; });
+  var ok = sets.filter(function(s){ return !s.error; });
+  var html = errs.map(function(s){ return '<p class="err">'+esc(s.titulo)+': '+esc(s.error)+'</p>'; }).join("");
+  if (!ok.length) { document.getElementById("out").innerHTML = html; return; }
+  html += '<div class="kpis">' + ok.map(function(s){ return '<div class="kpi"><span class="eyebrow">'+GROUP[s.grupo]+'</span><b>'+s.n+'</b><span class="muted">respuestas'+(s.ultima?' · última '+new Date(s.ultima).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):'')+'</span></div>'; }).join("") + '</div>';
+  var sc = ok.map(scores), secs = (sc[0]||[]).map(function(x){ return x[0]; });
+  ok.forEach(function(s,i){ sc[i].forEach(function(x){ if (secs.indexOf(x[0])<0) secs.push(x[0]); }); });
+  html += '<div class="panel"><h2>Puntaje por sección</h2><table><thead><tr><th>Sección</th>'+ok.map(function(s){return '<th>'+GROUP[s.grupo]+'</th>';}).join("")+'</tr></thead><tbody>'
+    + secs.map(function(k){ return '<tr><td>'+esc(k)+'</td>'+sc.map(function(list){ var f = list.filter(function(x){return x[0]===k;})[0]; if(!f) return '<td class="muted">–</td>'; var b = band(f[1]); return '<td><b>'+f[1]+'</b> <span class="band '+b[0]+'">'+b[1]+'</span></td>'; }).join("")+'</tr>'; }).join("")
+    + '</tbody></table><p class="muted" style="font-size:.85rem;margin:0">Puntaje 0–100: la opción más colaborativa vale 100 y la menos colaborativa 0.</p></div>';
+  var base = ok[0], cur = null;
+  base.preguntas.forEach(function(p, i){
+    if (p.seccion !== cur) { if (cur !== null) html += '</div>'; cur = p.seccion; html += '<div class="panel"><h2>'+esc(cur)+'</h2>'; }
+    html += '<div class="q"><h3>'+esc(p.titulo)+'</h3>';
+    if (p.opciones) {
+      var cols = p.opciones.length === 3 ? COLORS3 : COLORS;
+      html += '<div class="pies">' + ok.map(function(s){ var q = s.preguntas[i]; var n = q.conteos.reduce(function(a,b){return a+b;},0);
+        return '<div><div class="glabel">'+GROUP[s.grupo]+' <span class="muted">· '+n+'</span></div><div class="pie">'+pie(q.conteos, cols)+'<div class="leg">'+q.opciones.map(function(o,j){ return '<span><i style="background:'+cols[j]+'"></i>'+esc(o)+' <b>'+q.conteos[j]+'</b></span>'; }).join("")+'</div></div></div>'; }).join("") + '</div>';
+    } else {
+      html += ok.map(function(s){ var q = s.preguntas[i]; return '<div><div class="glabel">'+GROUP[s.grupo]+'</div>'+(q.textos.length ? q.textos.map(function(t){ return '<blockquote>'+esc(t)+'</blockquote>'; }).join("") : '<p class="muted">Sin respuestas todavía.</p>')+'</div>'; }).join("");
+    }
+    html += '</div>';
+  });
+  if (cur !== null) html += '</div>';
+  document.getElementById("out").innerHTML = html;
+}
+function load(){
+  document.getElementById("stamp").textContent = "Actualizando…";
+  google.script.run.withSuccessHandler(function(json){ DATA = JSON.parse(json); render(); document.getElementById("stamp").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}); })
+    .withFailureHandler(function(e){ document.getElementById("stamp").textContent = "No se pudo actualizar: " + e.message; }).obtenerDatos();
+}
+document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ TIPO = t.dataset.tipo; document.querySelectorAll(".tab").forEach(function(x){ x.setAttribute("aria-selected", x===t); }); if (DATA) render(); }; });
+document.getElementById("refresh").onclick = load;
+load(); setInterval(load, 120000);
+</script></body></html>`;
