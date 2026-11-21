@@ -243,6 +243,21 @@ function imagenes_() {
   return { banner: get("banner.jpg"), logo: get("logo.png"), firma: get("firma-logo.png") };
 }
 
+// Gráfico de torta (imagen) con el % de cada respuesta de un grupo. Si Google no puede dibujarlo, devuelve null.
+function torta_(q, k, cols) {
+  const c = q.por[k].conteos;
+  if (!c.reduce(function (a, b) { return a + b; }, 0)) return null;
+  try {
+    const dt = Charts.newDataTable().addColumn(Charts.ColumnType.STRING, "Respuesta").addColumn(Charts.ColumnType.NUMBER, "Personas");
+    q.opciones.forEach(function (o, i) { dt.addRow([o, c[i]]); });
+    return Charts.newPieChart().setDataTable(dt.build()).setColors(cols).setDimensions(360, 360)
+      .setLegendPosition(Charts.Position.NONE).setOption("pieSliceText", "percentage")
+      .setOption("pieSliceTextStyle", { fontSize: 22, color: "#FFFFFF" }).setOption("pieSliceBorderColor", "#FFFFFF")
+      .setOption("chartArea", { left: 6, top: 6, width: "96%", height: "96%" }).setOption("backgroundColor", "#FFFFFF")
+      .build().getAs("image/png");
+  } catch (e) { return null; }
+}
+
 // ── Datos ──
 function puntos_(j, n) { return n > 1 ? (n - 1 - j) / (n - 1) * 100 : 100; }
 function puntaje_(conteos) {
@@ -577,21 +592,20 @@ function construirDetalle_(ctx) {
     for (let i = 0; i < s.qs.length; i += 2) {
       sl = contenido_(ctx, s.titulo);
       s.qs.slice(i, i + 2).forEach(function (q, j) {
-        const y = 66 + j * 152;
+        const y = 66 + j * 152, cols = ESCALA[q.opciones.length] || ESCALA[4];
         caja_(sl, q.titulo, 30, y, 660, 34, { size: 13, bold: true, color: COL.navy });
         gs.forEach(function (g, gi) {
-          const yy = y + 38 + gi * 32, n = q.por[g.k].conteos.reduce(function (a, b) { return a + b; }, 0);
-          caja_(sl, g.nombre + " · " + n, 30, yy, 120, 26, { size: 11, v: "middle" });
-          apilada_(sl, q, g.k, 154, yy + 2, 440, 22);
+          const x0 = 30 + gi * 335, c = q.por[g.k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0);
+          caja_(sl, g.nombre + " · " + n + (n === 1 ? " respuesta" : " respuestas"), x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
+          const img = torta_(q, g.k, cols);
+          if (img) sl.insertImage(img, x0, y + 56, 90, 90);
+          else apilada_(sl, q, g.k, x0, y + 90, 90, 20);
+          const ley = caja_(sl, q.opciones.map(function (o, k) { return "●  " + o + "  " + pct_(c[k], n) + "%"; }).join("\n"), x0 + 96, y + 54, 230, 72, { size: 10 }).getText();
+          let p = 0;
+          q.opciones.forEach(function (o, k) { ley.getRange(p, p + 1).getTextStyle().setForegroundColor(cols[k] || COL.mute); p += ("●  " + o + "  " + pct_(c[k], n) + "%").length + 1; });
           const v = q.por[g.k].puntaje;
-          circulo_(sl, 606, yy + 7, 11, banda_(v).c);
-          caja_(sl, "Puntaje " + (v === null ? "–" : v + "/100"), 620, yy, 90, 26, { size: 11, bold: true, v: "middle" });
+          caja_(sl, "Puntaje " + (v === null ? "–" : v + "/100 · " + banda_(v).t), x0 + 96, y + 126, 230, 20, { size: 10, color: COL.mute });
         });
-        const cols = ESCALA[q.opciones.length] || ESCALA[4];
-        const texto = q.opciones.map(function (o) { return "■ " + o; }).join("    ");
-        const ley = caja_(sl, texto, 150, y + 38 + gs.length * 32, 540, 34, { size: 10, color: COL.mute }).getText();
-        let p = 0;
-        q.opciones.forEach(function (o, k) { ley.getRange(p, p + 1).getTextStyle().setForegroundColor(cols[k] || COL.mute); p += o.length + 2 + 4; });
       });
     }
   });
