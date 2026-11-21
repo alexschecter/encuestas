@@ -234,7 +234,7 @@ const CULTURE_SECTION = { id: "culture", title: "Cultura", hint: "Valores, compe
 
 const PURPOSE_COLAB = "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas. Tu perspectiva es clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.";
 const PURPOSE_CULTURA = "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas, y el estado de la cultura de la empresa. Tus perspectivas son clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.";
-// Cada encuesta tiene su propio enlace: https://alexschecter.github.io/diagnosticos/#<id>
+// Cada encuesta tiene su propio enlace: https://alexschecter.github.io/encuestas/#colaboracion (ver startFromLink)
 // Las versiones "-direccion" son para el equipo directivo (C-level); sus respuestas van a su propio Google Form.
 const DIAGNOSTICS = [
   { id: "colab", title: "Colaboración Interfuncional", minutes: "5–7 min", purpose: PURPOSE_COLAB, sections: COLAB_SECTIONS },
@@ -297,7 +297,9 @@ function renderClosed() {
 }
 
 function startFromLink() {
-  const d = DIAGNOSTICS.find(x => x.id === decodeURIComponent(location.hash.slice(1)));
+  // Enlaces públicos: #colaboracion, #colaboracion-cultura, #colaboracion-direccion, #colaboracion-cultura-direccion
+  const h = decodeURIComponent(location.hash.slice(1)).replace(/^colaboracion/, "colab");
+  const d = DIAGNOSTICS.find(x => x.id === h);
   if (!d) { state = { view: "home", diag: null, sec: 0, answers: {} }; return render(); }
   const draft = store.get(key(d.id));
   state = { view: "intro", diag: d, sec: 0, answers: {} };
