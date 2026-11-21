@@ -9,6 +9,7 @@
  *    Ejecutar como: Yo. Quién tiene acceso: Solo yo. → Implementar.
  * 4. Autorizá los permisos y abrí la URL de la aplicación web. Guardala en favoritos.
  * 5. (Una sola vez) Elegí la función "agregarCampoCliente" arriba y tocá Ejecutar: agrega el campo "Cliente" a los formularios.
+ * 6. (Una sola vez) Elegí la función "autorizar" y tocá Ejecutar: da permiso para crear los informes en tu Drive.
  */
 
 const ENCUESTAS = [
@@ -95,6 +96,375 @@ function obtenerDatos() {
   }));
 }
 
+// ───────────────────────── Informe (Google Slides) ─────────────────────────
+// El botón "Generar informe" del tablero llama a generarInforme(cliente, tipo).
+// Crea dos presentaciones en la carpeta "Informes de encuestas" de tu Drive:
+//   · "… · Resumen"  para enviar al cliente
+//   · "… · Completo" con el detalle de cada pregunta (puntaje y % de cada respuesta)
+// y un PDF de cada una.
+
+const IMG_BASE = "https://alexschecter.github.io/encuestas/img/";
+const CARPETA_INFORMES = "Informes de encuestas";
+const FONT = "Calibri";
+const COL = { navy: "#111A27", blue: "#4A90D9", sky: "#A9CBEF", sand: "#D8BBA8", coral: "#D9735B", ink: "#1C2533", mute: "#5F6B7A", white: "#FFFFFF", mist: "#EEF3F9", line: "#DDE3EA" };
+const GRUPOS = [{ k: "mm", nombre: "Mandos medios", color: COL.blue }, { k: "cl", nombre: "Dirección", color: COL.navy }];
+const ESCALA = { 2: ["#2F6DB5", "#D9735B"], 3: ["#2F6DB5", "#E3C9B6", "#D9735B"], 4: ["#2F6DB5", "#A9CBEF", "#E3C9B6", "#D9735B"], 5: ["#2F6DB5", "#7FAEE3", "#C9DCF2", "#E3C9B6", "#D9735B"] };
+const W = 720, H = 405;
+
+// Ejecutar UNA vez desde el editor para dar los permisos nuevos (crea la carpeta "Informes de encuestas").
+function autorizar() {
+  const c = carpetaInformes_();
+  UrlFetchApp.fetch(IMG_BASE + "logo.png");
+  Logger.log("Permisos listos. Carpeta: " + c.getUrl());
+}
+
+function generarInforme(cliente, tipo) {
+  if (!cliente || cliente === "(sin cliente)") throw new Error("Elegí un cliente en el menú.");
+  const raw = JSON.parse(obtenerDatos());
+  const d = prepararDatos_(raw, cliente, tipo || "colab");
+  const nombreBase = d.clienteNombre + " · " + d.tituloEncuesta + " · " + d.fecha;
+  const carpeta = carpetaInformes_();
+
+  const pres = SlidesApp.create(nombreBase + " · Completo");
+  const ctx = { pres: pres, d: d, pag: 0, imgs: imagenes_() };
+  const inicial = pres.getSlides()[0];
+  construirResumen_(ctx);
+  const nResumen = ctx.pag;
+  construirDetalle_(ctx);
+  inicial.remove();
+  pres.saveAndClose();
+  const fCompleto = DriveApp.getFileById(pres.getId());
+  fCompleto.moveTo(carpeta);
+
+  const fResumen = fCompleto.makeCopy(nombreBase + " · Resumen", carpeta);
+  const pr = SlidesApp.openById(fResumen.getId());
+  pr.getSlides().slice(nResumen).forEach(function (s) { s.remove(); });
+  pr.saveAndClose();
+
+  const pdf = function (f) { return carpeta.createFile(f.getAs(MimeType.PDF)).setName(f.getName() + ".pdf").getUrl(); };
+  return JSON.stringify({
+    resumen: { url: fResumen.getUrl(), pdf: pdf(fResumen) },
+    completo: { url: fCompleto.getUrl(), pdf: pdf(fCompleto) },
+  });
+}
+
+function carpetaInformes_() {
+  const it = DriveApp.getFoldersByName(CARPETA_INFORMES);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(CARPETA_INFORMES);
+}
+
+function imagenes_() {
+  const get = function (n) { try { return UrlFetchApp.fetch(IMG_BASE + n).getBlob(); } catch (e) { return null; } };
+  return { banner: get("banner.jpg"), logo: get("logo.png") };
+}
+
+// ── Datos ──
+function puntos_(j, n) { return n > 1 ? (n - 1 - j) / (n - 1) * 100 : 100; }
+function puntaje_(conteos) {
+  const n = conteos.reduce(function (a, b) { return a + b; }, 0);
+  if (!n) return null;
+  return Math.round(conteos.reduce(function (a, c, j) { return a + c * puntos_(j, conteos.length); }, 0) / n);
+}
+function promedio_(xs) { xs = xs.filter(function (x) { return x !== null && x !== undefined; }); return xs.length ? Math.round(xs.reduce(function (a, b) { return a + b; }, 0) / xs.length) : null; }
+function banda_(s) { return s === null ? { t: "Sin datos", c: COL.line } : s >= 75 ? { t: "Fortaleza", c: COL.blue } : s >= 50 ? { t: "En desarrollo", c: COL.sand } : { t: "Prioridad", c: COL.coral }; }
+
+function prepararDatos_(raw, cliente, tipo) {
+  const sets = raw.filter(function (s) { return s.tipo === tipo && !s.error; });
+  const g = {};
+  sets.forEach(function (s) {
+    const c = s.clientes[cliente];
+    g[s.grupo] = { n: c ? c.n : 0, preguntas: s.preguntas.map(function (p, i) {
+      return { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, conteos: c ? c.conteos[i] : (p.opciones ? p.opciones.map(function () { return 0; }) : null), textos: c ? c.textos[i] : [] };
+    }) };
+  });
+  const grupos = GRUPOS.filter(function (x) { return g[x.k] && g[x.k].n > 0; });
+  if (!grupos.length) throw new Error("Todavía no hay respuestas de este cliente en esta encuesta.");
+  const base = g[grupos[0].k].preguntas;
+  const preguntas = base.map(function (p, i) {
+    const q = { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, por: {} };
+    grupos.forEach(function (x) { const pq = g[x.k].preguntas[i]; q.por[x.k] = { conteos: pq.conteos, textos: pq.textos || [], puntaje: p.opciones ? puntaje_(pq.conteos) : null }; });
+    if (p.opciones) q.puntaje = promedio_(grupos.map(function (x) { return q.por[x.k].puntaje; }));
+    return q;
+  });
+  const secciones = [];
+  preguntas.forEach(function (q) {
+    if (!q.opciones) return;
+    let s = secciones.filter(function (x) { return x.titulo === q.seccion; })[0];
+    if (!s) { s = { titulo: q.seccion, qs: [] }; secciones.push(s); }
+    s.qs.push(q);
+  });
+  secciones.forEach(function (s) {
+    s.por = {};
+    grupos.forEach(function (x) { s.por[x.k] = promedio_(s.qs.map(function (q) { return q.por[x.k].puntaje; })); });
+    s.puntaje = promedio_(grupos.map(function (x) { return s.por[x.k]; }));
+  });
+  const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const hoy = new Date();
+  const nombre = String(cliente).replace(/[-_]+/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  return {
+    cliente: cliente, clienteNombre: nombre, tipo: tipo, grupos: grupos, n: g, preguntas: preguntas, secciones: secciones,
+    tituloEncuesta: tipo === "cultura" ? "Colaboración Interfuncional y Cultura" : "Colaboración Interfuncional",
+    fecha: meses[hoy.getMonth()] + " " + hoy.getFullYear(),
+  };
+}
+
+// ── Dibujo ──
+function caja_(sl, text, l, t, w, h, o) {
+  o = o || {};
+  const s = sl.insertTextBox(text || " ", l, t, w, h);
+  const tr = s.getText();
+  tr.getTextStyle().setFontFamily(FONT).setFontSize(o.size || 14).setForegroundColor(o.color || COL.ink).setBold(!!o.bold).setItalic(!!o.italic);
+  if (o.align) tr.getParagraphStyle().setParagraphAlignment(o.align === "center" ? SlidesApp.ParagraphAlignment.CENTER : o.align === "end" ? SlidesApp.ParagraphAlignment.END : SlidesApp.ParagraphAlignment.START);
+  s.setContentAlignment(o.v === "middle" ? SlidesApp.ContentAlignment.MIDDLE : o.v === "bottom" ? SlidesApp.ContentAlignment.BOTTOM : SlidesApp.ContentAlignment.TOP);
+  return s;
+}
+function forma_(sl, tipo, l, t, w, h, color) {
+  const s = sl.insertShape(tipo, l, t, w, h);
+  s.getFill().setSolidFill(color);
+  s.getBorder().setTransparent();
+  return s;
+}
+function rect_(sl, l, t, w, h, color) { return forma_(sl, SlidesApp.ShapeType.RECTANGLE, l, t, w, h, color); }
+function tarjeta_(sl, l, t, w, h) { return forma_(sl, SlidesApp.ShapeType.ROUND_RECTANGLE, l, t, w, h, COL.mist); }
+function circulo_(sl, l, t, d, color, text, size) {
+  const s = forma_(sl, SlidesApp.ShapeType.ELLIPSE, l, t, d, d, color);
+  if (text) {
+    const tr = s.getText(); tr.setText(text);
+    tr.getTextStyle().setFontFamily(FONT).setFontSize(size || 14).setBold(true).setForegroundColor(COL.white);
+    tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
+    s.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
+  }
+  return s;
+}
+function nueva_(ctx, oscura) {
+  const sl = ctx.pres.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+  sl.getBackground().setSolidFill(oscura ? COL.navy : COL.white);
+  ctx.pag++;
+  return sl;
+}
+function contenido_(ctx, titulo, sub) {
+  const sl = nueva_(ctx, false);
+  caja_(sl, titulo, 30, 18, 660, 40, { size: 24, bold: true, color: COL.navy });
+  if (sub) caja_(sl, sub, 30, 54, 660, 22, { size: 12, color: COL.mute });
+  caja_(sl, "Encuesta de " + ctx.d.tituloEncuesta + " · " + ctx.d.clienteNombre, 30, 376, 520, 20, { size: 9, color: COL.mute });
+  caja_(sl, String(ctx.pag), 640, 376, 50, 20, { size: 9, color: COL.mute, align: "end" });
+  return sl;
+}
+function pct_(c, n) { return n ? Math.round(c / n * 100) : 0; }
+function nombreGrupo_(k) { return GRUPOS.filter(function (x) { return x.k === k; })[0].nombre; }
+function masElegida_(q, k) {
+  const c = q.por[k].conteos; let j = 0;
+  c.forEach(function (v, i) { if (v > c[j]) j = i; });
+  return q.opciones[j];
+}
+
+// Barras horizontales por grupo (una fila por etiqueta)
+function barras_(sl, d, filas, l, t, w, h, anchoEtiqueta) {
+  const gs = d.grupos;
+  const ley = caja_(sl, gs.map(function (x) { return "■ " + x.nombre; }).join("     "), l + anchoEtiqueta, t - 4, w - anchoEtiqueta, 18, { size: 10, color: COL.ink }).getText();
+  let pos = 0;
+  gs.forEach(function (x) { ley.getRange(pos, pos + 1).getTextStyle().setForegroundColor(x.color); pos += x.nombre.length + 2 + 5; });
+  const top = t + 18, alto = (h - 18) / filas.length, barH = Math.min(12, (alto - 10) / gs.length), maxW = w - anchoEtiqueta - 40;
+  filas.forEach(function (f, i) {
+    const y = top + i * alto;
+    caja_(sl, f.etiqueta, l, y, anchoEtiqueta - 8, alto, { size: 10.5, color: COL.ink, align: "end", v: "middle" });
+    const bloque = barH * gs.length + 2 * (gs.length - 1), y0 = y + (alto - bloque) / 2;
+    gs.forEach(function (x, gi) {
+      const v = f.valores[x.k];
+      const yy = y0 + gi * (barH + 2);
+      if (v !== null && v > 0) rect_(sl, l + anchoEtiqueta, yy, Math.max(2, maxW * v / 100), barH, x.color);
+      caja_(sl, v === null ? "–" : String(v), l + anchoEtiqueta + Math.max(2, maxW * (v || 0) / 100) + 2, yy - 4, 36, barH + 8, { size: 9.5, color: COL.ink, v: "middle" });
+    });
+  });
+}
+
+// Barra apilada con el % de cada respuesta
+function apilada_(sl, q, k, l, t, w, h) {
+  const c = q.por[k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0), cols = ESCALA[c.length] || ESCALA[4];
+  if (!n) { rect_(sl, l, t, w, h, COL.line); return; }
+  let x = l;
+  c.forEach(function (v, j) {
+    if (!v) return;
+    const ww = w * v / n, s = rect_(sl, x, t, ww, h, cols[j]);
+    if (ww >= 26) {
+      const tr = s.getText(); tr.setText(pct_(v, n) + "%");
+      tr.getTextStyle().setFontFamily(FONT).setFontSize(10).setBold(true).setForegroundColor(j === 0 || j === c.length - 1 ? COL.white : COL.ink);
+      tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
+      s.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
+    }
+    x += ww;
+  });
+}
+
+// ── Resumen ──
+function construirResumen_(ctx) {
+  const d = ctx.d, gs = d.grupos, dos = gs.length === 2;
+  const secs = d.secciones.slice().sort(function (a, b) { return b.puntaje - a.puntaje; });
+  const top = secs[0], low = secs[secs.length - 1];
+  const detalleSec = function (s) { return dos ? " (mandos medios " + s.por.mm + ", Dirección " + s.por.cl + ")" : ""; };
+
+  // 1. Portada
+  let sl = nueva_(ctx, true);
+  if (ctx.imgs.banner) sl.insertImage(ctx.imgs.banner, 0, 0, W, W * 239 / 1031);
+  caja_(sl, (d.tipo === "cultura" ? "Colaboración y cultura en " : "Colaboración interfuncional en ") + d.clienteNombre, 36, 192, 648, 44, { size: 30, bold: true, color: COL.white });
+  caja_(sl, "Resultados de la encuesta · " + d.fecha, 36, 240, 648, 22, { size: 14, color: COL.sky });
+  caja_(sl, gs.map(function (x) { return x.nombre + " (" + d.n[x.k].n + ")"; }).join(" · "), 36, 262, 648, 22, { size: 14, color: COL.sand });
+
+  // 2. Tres mensajes
+  sl = contenido_(ctx, "Tres mensajes principales");
+  let m1;
+  if (dos) {
+    const mmMas = d.secciones.filter(function (s) { return s.por.mm - s.por.cl >= 5; }).length;
+    const clMas = d.secciones.filter(function (s) { return s.por.cl - s.por.mm >= 5; }).length;
+    const N = d.secciones.length;
+    if (!mmMas && !clMas) m1 = ["Una mirada compartida", "Mandos medios y Dirección dan puntajes parecidos en todas las dimensiones."];
+    else if (mmMas >= clMas) m1 = ["Dos miradas distintas", "Los mandos medios ven la colaboración de forma más positiva que Dirección en " + mmMas + " de las " + N + " dimensiones."];
+    else m1 = ["Dos miradas distintas", "Dirección ve la colaboración de forma más positiva que los mandos medios en " + clMas + " de las " + N + " dimensiones."];
+  } else {
+    m1 = ["Participación", "Respondieron " + d.n[gs[0].k].n + " personas de " + gs[0].nombre.toLowerCase() + "."];
+  }
+  const msgs = [m1,
+    ["Fortaleza: " + top.titulo, "Es la dimensión mejor valorada, con un puntaje de " + top.puntaje + detalleSec(top) + "."],
+    ["Prioridad: " + low.titulo, "Es la dimensión con el puntaje más bajo: " + low.puntaje + detalleSec(low) + "."]];
+  msgs.forEach(function (m, i) {
+    const x = 30 + i * 222;
+    tarjeta_(sl, x, 80, 210, 280);
+    circulo_(sl, x + 16, 96, 36, COL.navy, String(i + 1), 16);
+    caja_(sl, m[0], x + 12, 142, 186, 56, { size: 15, bold: true, color: COL.navy });
+    caja_(sl, m[1], x + 12, 200, 186, 150, { size: 13 });
+  });
+
+  // 3. Participación y escala
+  sl = contenido_(ctx, "Quiénes respondieron y cómo leer los resultados");
+  gs.forEach(function (x, i) {
+    caja_(sl, String(d.n[x.k].n), 30 + i * 150, 80, 140, 70, { size: 54, bold: true, color: x.color });
+    caja_(sl, x.nombre, 30 + i * 150, 150, 140, 22, { size: 14 });
+  });
+  caja_(sl, "Respuestas anónimas, salvo quien eligió dar su nombre. Con pocos participantes, cada respuesta pesa mucho: los resultados muestran tendencias para conversar, no conclusiones definitivas.", 30, 190, 300, 120, { size: 12, color: COL.mute });
+  tarjeta_(sl, 360, 80, 330, 280);
+  caja_(sl, "Puntaje de 0 a 100", 374, 92, 300, 24, { size: 15, bold: true, color: COL.navy });
+  caja_(sl, "Cada respuesta se convierte en un puntaje: la opción más favorable vale 100 y la menos favorable 0. El puntaje de cada dimensión es el promedio de sus preguntas. El informe completo muestra además el % de personas que eligió cada respuesta.", 374, 118, 300, 130, { size: 12 });
+  [["Fortaleza", "75 a 100", COL.blue], ["En desarrollo", "50 a 74", COL.sand], ["Prioridad", "0 a 49", COL.coral]].forEach(function (b, i) {
+    circulo_(sl, 380, 268 + i * 28, 14, b[2]);
+    caja_(sl, b[0] + "   " + b[1], 400, 262 + i * 28, 260, 24, { size: 12, v: "middle" });
+  });
+
+  // 4. Panorama por dimensión
+  let titulo4 = "Puntaje por dimensión";
+  if (dos) {
+    const mmMas = d.secciones.filter(function (s) { return s.por.mm > s.por.cl; }).length;
+    titulo4 = mmMas > d.secciones.length / 2 ? "Los mandos medios ven la colaboración más positiva" : mmMas < d.secciones.length / 2 ? "Dirección ve la colaboración más positiva" : "Puntaje por dimensión";
+  }
+  sl = contenido_(ctx, titulo4);
+  barras_(sl, d, d.secciones.map(function (s) { return { etiqueta: s.titulo, valores: s.por }; }), 30, 80, 470, 285, 170);
+  tarjeta_(sl, 520, 80, 170, 285);
+  let lado = ["Lo que se ve", "La dimensión mejor valorada es " + top.titulo + " y la más baja, " + low.titulo + "."];
+  if (dos) {
+    const gap = d.secciones.slice().sort(function (a, b) { return Math.abs(b.por.mm - b.por.cl) - Math.abs(a.por.mm - a.por.cl); })[0];
+    lado[1] = "La mayor distancia entre los dos grupos está en " + gap.titulo + ": " + gap.por.mm + " para mandos medios y " + gap.por.cl + " para Dirección.\n\n" + lado[1];
+  }
+  caja_(sl, lado[0], 530, 90, 150, 22, { size: 14, bold: true, color: COL.navy });
+  caja_(sl, lado[1], 530, 114, 150, 240, { size: 11.5 });
+
+  // 5 y 6. Fortalezas y prioridades
+  const qs = d.preguntas.filter(function (q) { return q.opciones && q.puntaje !== null; });
+  const ord = qs.slice().sort(function (a, b) { return b.puntaje - a.puntaje; });
+  const tarjetasPreguntas = function (titulo, sub, lista) {
+    const s = contenido_(ctx, titulo, sub);
+    lista.forEach(function (q, i) {
+      const x = 30 + (i % 2) * 335, y = 84 + Math.floor(i / 2) * 142;
+      tarjeta_(s, x, y, 325, 130);
+      caja_(s, q.titulo, x + 10, y + 8, 305, 80, { size: 13 });
+      gs.forEach(function (g, gi) {
+        const v = q.por[g.k].puntaje, xx = x + 14 + gi * 150;
+        circulo_(s, xx, y + 102, 11, banda_(v).c);
+        caja_(s, (v === null ? "–" : v) + "  " + g.nombre, xx + 14, y + 94, 136, 26, { size: 11, v: "middle" });
+      });
+    });
+  };
+  tarjetasPreguntas("Fortalezas: lo mejor valorado", "Las preguntas con mayor puntaje promedio.", ord.slice(0, 4));
+  tarjetasPreguntas("Prioridades: lo que más necesita atención", "Las preguntas con menor puntaje promedio.", ord.slice(-4).reverse());
+
+  // 7. Brechas
+  if (dos) {
+    const brechas = qs.filter(function (q) { return q.por.mm.puntaje !== null && q.por.cl.puntaje !== null; })
+      .sort(function (a, b) { return Math.abs(b.por.mm.puntaje - b.por.cl.puntaje) - Math.abs(a.por.mm.puntaje - a.por.cl.puntaje); }).slice(0, 5);
+    if (brechas.length) {
+      sl = contenido_(ctx, "Donde las miradas más se separan");
+      barras_(sl, d, brechas.map(function (q) { return { etiqueta: q.titulo, valores: { mm: q.por.mm.puntaje, cl: q.por.cl.puntaje } }; }), 30, 80, 470, 285, 220);
+      tarjeta_(sl, 520, 80, 170, 285);
+      const b = brechas[0];
+      caja_(sl, "Para conversar", 530, 90, 150, 22, { size: 14, bold: true, color: COL.navy });
+      caja_(sl, "En \"" + b.titulo + "\", la respuesta más elegida por mandos medios fue \"" + masElegida_(b, "mm") + "\" y por Dirección \"" + masElegida_(b, "cl") + "\".\n\n¿Qué ve cada nivel que el otro no ve?", 530, 114, 150, 240, { size: 11.5 });
+    }
+  }
+
+  // 8. Próximos pasos
+  sl = nueva_(ctx, true);
+  if (ctx.imgs.logo) sl.insertImage(ctx.imgs.logo, 36, 28, 130, 54);
+  caja_(sl, "Próximos pasos sugeridos", 36, 100, 648, 40, { size: 26, bold: true, color: COL.white });
+  [[dos ? "Alinear miradas" : "Compartir los resultados", dos ? "Una sesión conjunta de Dirección y mandos medios para revisar estos resultados." : "Una sesión con el equipo para revisar estos resultados y priorizar."],
+   ["Trabajar sobre " + low.titulo.charAt(0).toLowerCase() + low.titulo.slice(1), "Elegir una o dos acciones concretas para los próximos 90 días."],
+   ["Sostener " + top.titulo.charAt(0).toLowerCase() + top.titulo.slice(1), "Hacer visible lo que ya funciona y usarlo como punto de apoyo."]].forEach(function (p, i) {
+    const x = 36 + i * 216;
+    circulo_(sl, x, 168, 32, COL.blue, String(i + 1), 15);
+    caja_(sl, p[0], x - 4, 208, 200, 50, { size: 14, bold: true, color: COL.white });
+    caja_(sl, p[1], x - 4, 258, 200, 90, { size: 12, color: COL.sky });
+  });
+}
+
+// ── Detalle (solo informe completo) ──
+function construirDetalle_(ctx) {
+  const d = ctx.d, gs = d.grupos;
+  let sl = nueva_(ctx, true);
+  caja_(sl, "Detalle por pregunta", 36, 150, 648, 44, { size: 30, bold: true, color: COL.white });
+  caja_(sl, "Para cada pregunta: el % de personas que eligió cada respuesta y el puntaje de 0 a 100 de cada grupo.", 36, 198, 600, 50, { size: 14, color: COL.sky });
+
+  // preguntas cerradas, de a 2 por diapositiva dentro de cada sección
+  d.secciones.forEach(function (s) {
+    for (let i = 0; i < s.qs.length; i += 2) {
+      sl = contenido_(ctx, s.titulo);
+      s.qs.slice(i, i + 2).forEach(function (q, j) {
+        const y = 66 + j * 152;
+        caja_(sl, q.titulo, 30, y, 660, 34, { size: 13, bold: true, color: COL.navy });
+        gs.forEach(function (g, gi) {
+          const yy = y + 38 + gi * 32, n = q.por[g.k].conteos.reduce(function (a, b) { return a + b; }, 0);
+          caja_(sl, g.nombre + " · " + n, 30, yy, 120, 26, { size: 11, v: "middle" });
+          apilada_(sl, q, g.k, 154, yy + 2, 440, 22);
+          const v = q.por[g.k].puntaje;
+          circulo_(sl, 606, yy + 7, 11, banda_(v).c);
+          caja_(sl, "Puntaje " + (v === null ? "–" : v), 620, yy, 80, 26, { size: 11, bold: true, v: "middle" });
+        });
+        const cols = ESCALA[q.opciones.length] || ESCALA[4];
+        const texto = q.opciones.map(function (o) { return "■ " + o; }).join("    ");
+        const ley = caja_(sl, texto, 150, y + 38 + gs.length * 32, 540, 34, { size: 10, color: COL.mute }).getText();
+        let p = 0;
+        q.opciones.forEach(function (o, k) { ley.getRange(p, p + 1).getTextStyle().setForegroundColor(cols[k] || COL.mute); p += o.length + 2 + 4; });
+      });
+    }
+  });
+
+  // preguntas abiertas
+  d.preguntas.filter(function (q) { return !q.opciones; }).forEach(function (q) {
+    gs.forEach(function (g) {
+      const textos = q.por[g.k].textos;
+      if (!textos.length) return;
+      let bloque = [], largo = 0;
+      const volcar = function () {
+        const s = contenido_(ctx, "Respuestas abiertas · " + g.nombre, q.titulo);
+        caja_(s, bloque.map(function (t) { return "— " + t; }).join("\n"), 30, 84, 660, 280, { size: 12 });
+        bloque = []; largo = 0;
+      };
+      textos.forEach(function (t) {
+        if (largo + t.length > 1500 && bloque.length) volcar();
+        bloque.push(t); largo += t.length + 40;
+      });
+      if (bloque.length) volcar();
+    });
+  });
+}
+
+
 const PAGINA = `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Inter:wght@400;500;600&display=swap">
@@ -136,10 +506,23 @@ th { font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var
 .glabel { font-weight:600; font-size:.85rem; margin-bottom:4px; }
 blockquote { margin:0 0 6px; padding:8px 12px; background:var(--bg); border-radius:8px; white-space:pre-wrap; font-size:.92rem; }
 .err { color:var(--low); }
+details.panel summary { cursor:pointer; font-weight:600; font-size:1.05rem; }
+.lk { display:grid; grid-template-columns:minmax(0,220px) minmax(0,1fr) auto; gap:8px; align-items:center; }
+.lk input, #nuevo { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); min-width:0; }
+@media (max-width:640px) { .lk { grid-template-columns:1fr auto; } .lk span { grid-column:1 / -1; } }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+.btn:disabled { opacity:.6; cursor:wait; }
+#inf a { color:var(--accent); font-weight:600; }
 </style></head><body><div class="wrap">
 <div class="top"><div><span class="eyebrow">Solo para vos · se actualiza solo</span><h1>Tablero de encuestas</h1></div><span class="sp"></span>
 <span class="muted" id="stamp">Cargando…</span><button class="btn" id="refresh">Actualizar</button></div>
-<div class="top" style="padding:0"><label class="muted" for="cliente">Cliente</label><select id="cliente" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px"></select></div>
+<details class="panel"><summary>Enviar la encuesta a un cliente</summary>
+<label class="muted" for="nuevo">Nombre del cliente</label><input id="nuevo" placeholder="Por ejemplo: Globex" autocomplete="off">
+<div id="links" style="display:grid;gap:8px"></div>
+<p class="muted" style="margin:0;font-size:.85rem">Mandá el enlace de mandos medios a los mandos medios y el de Dirección a Dirección. Todos los de un mismo grupo reciben el mismo enlace.</p></details>
+<div class="top" style="padding:0"><label class="muted" for="cliente">Cliente</label><select id="cliente" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px"></select>
+<button class="btn primary" id="informe">Generar informe</button></div>
+<div id="inf" class="muted" aria-live="polite"></div>
 <div class="tabs" role="tablist">
   <button class="tab" role="tab" data-tipo="colab" aria-selected="true">Colaboración</button>
   <button class="tab" role="tab" data-tipo="cultura" aria-selected="false">Colaboración & Cultura</button>
@@ -219,6 +602,20 @@ function load(){
 }
 document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ TIPO = t.dataset.tipo; document.querySelectorAll(".tab").forEach(function(x){ x.setAttribute("aria-selected", x===t); }); if (DATA) render(); }; });
 document.getElementById("refresh").onclick = load;
+var BASE = "https://alexschecter.github.io/encuestas/#";
+var LINKS = [["Colaboración · Mandos medios","colaboracion"],["Colaboración · Dirección","colaboracion-direccion"],["Colaboración & Cultura · Mandos medios","colaboracion-cultura"],["Colaboración & Cultura · Dirección","colaboracion-cultura-direccion"]];
+function slug(t){ return t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
+document.getElementById("nuevo").oninput = function(){ var c = slug(this.value);
+  document.getElementById("links").innerHTML = c ? LINKS.map(function(l){ var u = BASE + c + "/" + l[1]; return '<div class="lk"><span class="muted">'+l[0]+'</span><input readonly value="'+esc(u)+'"><button class="btn" type="button">Copiar</button></div>'; }).join("") : ""; };
+document.getElementById("links").onclick = function(e){ if (e.target.tagName !== "BUTTON") return; var inp = e.target.previousElementSibling; inp.select(); var ok = false; try { ok = document.execCommand("copy"); } catch (x) {} if (!ok && navigator.clipboard) navigator.clipboard.writeText(inp.value); e.target.textContent = "Copiado"; setTimeout(function(){ e.target.textContent = "Copiar"; }, 1500); };
+document.getElementById("informe").onclick = function(){
+  var b = this, st = document.getElementById("inf");
+  if (!CLIENTE || CLIENTE === "(sin cliente)") { st.innerHTML = '<span class="err">Elegí un cliente en el menú.</span>'; return; }
+  b.disabled = true; st.innerHTML = 'Generando el informe de <b>'+esc(CLIENTE)+'</b> ('+(TIPO === "cultura" ? "Colaboración & Cultura" : "Colaboración")+')… puede tardar 1 a 3 minutos.';
+  google.script.run.withSuccessHandler(function(j){ var r = JSON.parse(j); b.disabled = false;
+    st.innerHTML = 'Listo. <a target="_blank" href="'+r.resumen.url+'">Resumen</a> (<a target="_blank" href="'+r.resumen.pdf+'">PDF</a>) · <a target="_blank" href="'+r.completo.url+'">Completo</a> (<a target="_blank" href="'+r.completo.pdf+'">PDF</a>). Quedan en la carpeta "Informes de encuestas" de tu Drive.'; })
+    .withFailureHandler(function(e){ b.disabled = false; st.innerHTML = '<span class="err">No se pudo generar el informe: '+esc(e.message)+'</span>'; })
+    .generarInforme(CLIENTE, TIPO); };
 document.getElementById("cliente").onchange = function(e){ CLIENTE = e.target.value; buildView(); render(); };
 load(); setInterval(load, 120000);
 </script></body></html>`;
