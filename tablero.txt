@@ -209,7 +209,7 @@ function promedio_(xs) { xs = xs.filter(function (x) { return x !== null && x !=
 const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero algo fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
 function estadio_(v) { return ESTADIOS.filter(function (e) { return v >= e[2]; })[0]; }
 // Para preguntas y dimensiones se usan nombres simples con los mismos rangos y colores.
-const NIVELES = ["Fortaleza", "Aceptable", "A mejorar", "Crítico"];
+const NIVELES = ["Fortaleza", "Funcional", "A mejorar", "Crítico"];
 function banda_(s) { if (s === null || s === undefined) return { t: "Sin datos", c: COL.line }; const e = estadio_(s); return { t: NIVELES[ESTADIOS.indexOf(e)], c: e[3] }; }
 
 function prepararDatos_(raw, cliente, tipo) {
@@ -667,7 +667,7 @@ var COLORS = ["var(--c0)","var(--c1)","var(--c2)","var(--c3)"], COLORS3 = ["var(
 var GROUP = { mm: "Mandos medios", cl: "Dirección (C-level)" };
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 function pts(j,n){ return (n-1-j)/(n-1)*100; }
-function band(s){ return s>=76?["e1","Fortaleza"]:s>=51?["e2","Aceptable"]:s>=26?["e3","A mejorar"]:["e4","Crítico"]; }
+function band(s){ return s>=76?["e1","Fortaleza"]:s>=51?["e2","Funcional"]:s>=26?["e3","A mejorar"]:["e4","Crítico"]; }
 function pie(counts, colors){
   var tot = counts.reduce(function(a,b){return a+b;},0), a = -Math.PI/2, out = "", r = 52, cx = 60, cy = 60;
   if (!tot) return '<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="var(--line)"/><text x="60" y="65" text-anchor="middle" font-size="12" fill="var(--muted)">Sin datos</text></svg>';
