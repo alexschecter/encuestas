@@ -244,17 +244,17 @@ const DIAGNOSTICS = [
 ];
 
 // ---------- Envío de respuestas ----------
-// Cada diagnóstico envía sus respuestas al Google Form original. "entries" sigue el orden exacto de las preguntas de arriba.
-// Si agregás, quitás o reordenás preguntas, actualizá también esta lista (o pedile a Claude que lo haga).
-const COLAB_ENTRIES = [399240661,1514542835,1508492944,207375225,2023814821,868157050,46991177,1201222270,933284939,1341063189,1511839627,2142852986,1732709139,654695480,1913096800,409174924,1247931239,1121817969,261054873,2133368063,535311757,878962806,137177445];
+// Cada encuesta envía sus respuestas a su propio Google Form (creados en la cuenta de Alex el 21/11/2026).
+// "entries" sigue el orden exacto de las preguntas de arriba. Si agregás, quitás o reordenás preguntas, actualizá también esta lista (o pedile a Claude que lo haga).
 const SUBMIT = {
-  "colab": { formId: "1FAIpQLScXFn-QiMze6zwby-uIF4_QrqD-yKrUYaQxnfDZbD357LdTlg", pages: 7, nameEntry: null, entries: COLAB_ENTRIES },
-  "colab-cultura": { formId: "1FAIpQLSen_m6SKq5MabHCaFJQfXOuZMHDI2Rga049r-jdSKlMcVpdLw", pages: 8, nameEntry: null,
-    entries: [...COLAB_ENTRIES, 676983646,364431460,315427670,890011333,1392156510,1769054710] },
-  // Formularios del equipo directivo: pendientes (formId null = el enlace muestra que la encuesta todavía no está abierta).
-  "colab-direccion": { formId: null, pages: 7, nameEntry: null, entries: COLAB_ENTRIES },
-  "colab-cultura-direccion": { formId: null, pages: 8, nameEntry: null,
-    entries: [...COLAB_ENTRIES, 676983646,364431460,315427670,890011333,1392156510,1769054710] },
+  "colab": { formId: "1FAIpQLSdw22UP7uuRwSkrTQD1imlPlJES1C6a7ySp3IZ32_Mssm5WiQ", pages: 7, nameEntry: 1000377386,
+    entries: [334012771,599501420,667408714,1946424772,1988395636,1910367039,348473557,1112580612,1108368085,169552227,1361645728,168004448,1944916124,1240979454,280844147,1560111990,1453191440,2104555719,353932158,1067749041,1778734433,1646318851,102059819] },
+  "colab-cultura": { formId: "1FAIpQLSeZo4DlrN_TQRGZsFcAfm010eUzBjtCfLhXtk4AS7McF1WtpQ", pages: 8, nameEntry: 467834768,
+    entries: [444870042,193345119,973842598,1764834742,91554364,1372587091,884447430,935408588,396984230,591947550,1728927898,1195753867,1140707638,1095196319,836043785,991038405,1747140627,720836434,2071477993,1588123710,794903240,1137147994,583156309,1425774130,806388823,1886303295,2086833718,1535839643,1805043304] },
+  "colab-direccion": { formId: "1FAIpQLSdYrjiiadTVDHMM1k_UjWHmOydehe4FOX_FzWu9iVLSlFQv5g", pages: 7, nameEntry: 1066829067,
+    entries: [1498496464,473327529,827223739,2091111,480082266,1264614162,1268128748,1732545153,932829439,80320641,801350299,711544213,1310381452,1435065111,528965983,78824214,1510674343,660419312,1602329580,1700349965,529248630,1996731013,1622194702] },
+  "colab-cultura-direccion": { formId: "1FAIpQLScRCq6HrmR7mYeNIZPfxTtYHTfIQFuahVft5OAid53oxrwDlQ", pages: 8, nameEntry: 1481114440,
+    entries: [1346534994,208466055,1606605707,33826159,1758699228,758405820,1991846420,206074198,2042619548,1145971686,918916590,1681071935,159690680,879330118,501879823,1295098062,348509852,94675429,692713018,758829496,734576787,662162574,148945905,1869787069,1703329,404656016,1578153122,1368228190,198886921] },
 };
 
 // ---------- Estado ----------
@@ -389,19 +389,13 @@ async function sendAnswers(d, name) {
   let k = 0;
   d.sections.forEach(s => s.qs.forEach(([text, opts], i) => {
     const v = state.answers[qid(s.id, i)], entry = cfg.entries[k++];
-    if (opts && typeof v === "number") body.append("entry." + entry, originalLabel(text, opts[v]));
+    if (opts && typeof v === "number") body.append("entry." + entry, opts[v]);
     else if (!opts && v && v.trim()) body.append("entry." + entry, v.trim());
   }));
   if (cfg.nameEntry && name) body.append("entry." + cfg.nameEntry, name);
   body.append("pageHistory", Array.from({ length: cfg.pages }, (_, i) => i).join(","));
   await fetch(`https://docs.google.com/forms/d/e/${cfg.formId}/formResponse`, { method: "POST", mode: "no-cors", body });
 }
-// Algunas opciones tienen tildes corregidas en la app; el Google Form espera el texto original.
-const originalLabel = (question, label) =>
-  label === "Más o menos" ? "Mas o Menos"
-  : label === "En desacuerdo" && question.startsWith("Entiendo cómo mi trabajo") ? "En desacuérdo"
-  : label;
-
 function renderSubmit() {
   const d = state.diag, cfg = SUBMIT[d.id];
   const total = d.sections.flatMap(x => x.qs).filter(q => q[1]).length;
