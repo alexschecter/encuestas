@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+</head>
+<body>
+<title>Diagnósticos de Equipo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single calm column; a sticky section rail tracks progress; results read as a report card. */
+:root {
+  --bg: #f3f5f4;
+  --surface: #ffffff;
+  --ink: #15201e;
+  --muted: #5b6b67;
+  --line: #d9e0de;
+  --accent: #1f4fd1;
+  --accent-soft: #e3eafc;
+  --good: #1d8a5a;
+  --mid: #b7791f;
+  --low: #c2410c;
+  --good-soft: #dcf2e7;
+  --mid-soft: #fbefd6;
+  --low-soft: #fde4d6;
+  --font-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1514; --surface: #18211f; --ink: #e8efed; --muted: #9aaaa6; --line: #2a3633;
+    --accent: #7b9cff; --accent-soft: #1d2a4d;
+    --good: #4cc78f; --mid: #e0a64a; --low: #f0845a;
+    --good-soft: #15342a; --mid-soft: #3a2e16; --low-soft: #3d2216;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1514; --surface: #18211f; --ink: #e8efed; --muted: #9aaaa6; --line: #2a3633;
+  --accent: #7b9cff; --accent-soft: #1d2a4d;
+  --good: #4cc78f; --mid: #e0a64a; --low: #f0845a;
+  --good-soft: #15342a; --mid-soft: #3a2e16; --low-soft: #3d2216;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 760px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; letter-spacing: -0.01em; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.08; font-weight: 700; }
+h2 { font-size: 1.6rem; line-height: 1.2; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 500; }
+p { margin: 0; }
+.eyebrow { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.muted { color: var(--muted); }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, textarea:focus-visible, .opt:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.btn { border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 600; background: var(--accent); color: #fff; }
+:root[data-theme="dark"] .btn, .btn { color: var(--surface); }
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.ghost:hover { background: var(--surface); }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.spacer { flex: 1; }
+
+/* Header */
+.top { display: flex; align-items: center; gap: 12px; padding-block: 20px 8px; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px; background: none; border: 0; color: var(--ink); padding: 0; }
+.brand svg { width: 22px; height: 22px; }
+
+/* Home */
+.hero { padding-block: 40px 28px; display: grid; gap: 14px; }
+.hero p { max-width: 58ch; color: var(--muted); font-size: 1.05rem; }
+.cards { display: grid; gap: 16px; }
+.dcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 14px; text-align: left; color: var(--ink); width: 100%; }
+.dcard:hover { border-color: var(--accent); }
+.meta { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font-size: 0.8rem; padding: 4px 10px; border-radius: 999px; background: var(--bg); color: var(--muted); font-weight: 500; }
+.chip.accent { background: var(--accent-soft); color: var(--accent); }
+.dcard .sections { font-size: 0.88rem; color: var(--muted); }
+.dcard .go { color: var(--accent); font-weight: 600; }
+.resume { font-size: 0.85rem; color: var(--mid); font-weight: 600; }
+
+/* Intro */
+.intro { padding-block: 32px; display: grid; gap: 20px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 12px; }
+.panel ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+
+/* Survey */
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 12px; z-index: 5; display: grid; gap: 8px; }
+.rail .bar { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.rail .fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s ease; }
+.rail .steps { display: flex; gap: 4px; }
+.rail .step { flex: 1; height: 4px; border-radius: 4px; background: var(--line); }
+.rail .step.done { background: var(--accent); opacity: .5; }
+.rail .step.now { background: var(--accent); }
+.rail .lbl { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; gap: 12px; }
+.sechead { padding-block: 24px 16px; display: grid; gap: 6px; }
+.qs { display: grid; gap: 16px; }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: grid; gap: 14px; transition: border-color .2s; }
+.q.missing { border-color: var(--low); }
+.q .qt { font-weight: 500; font-size: 1.05rem; display: flex; gap: 10px; }
+.q .qn { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 1.6em; }
+.opts { display: grid; gap: 8px; }
+.opts.scale { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.opts.scale.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.opt { position: relative; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; cursor: pointer; font-size: 0.95rem; background: var(--surface); transition: background .15s, border-color .15s; min-width: 0; }
+.opts.scale .opt { justify-content: center; text-align: center; padding: 12px 8px; font-size: 0.9rem; }
+.opt input { position: absolute; opacity: 0; pointer-events: none; }
+.opt:hover { border-color: var(--accent); }
+.opt .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); flex: none; }
+.opts.scale .dot { display: none; }
+.opt:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+.opt:has(input:checked) .dot { border: 5px solid var(--accent); }
+textarea { width: 100%; min-height: 110px; border: 1px solid var(--line); border-radius: 10px; padding: 12px; font: inherit; background: var(--bg); color: var(--ink); resize: vertical; }
+.optional { font-size: 0.78rem; color: var(--muted); font-weight: 400; }
+.nav { display: flex; gap: 12px; padding-block: 28px 0; align-items: center; flex-wrap: wrap; }
+.warn { color: var(--low); font-size: 0.9rem; }
+
+/* Results */
+.res { padding-block: 32px; display: grid; gap: 28px; }
+.score { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+.ring { width: 140px; height: 140px; }
+.ring text { font-family: var(--font-display); fill: var(--ink); }
+.band { justify-self: start; display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 600; font-size: 0.85rem; }
+.band.good { background: var(--good-soft); color: var(--good); }
+.band.mid { background: var(--mid-soft); color: var(--mid); }
+.band.low { background: var(--low-soft); color: var(--low); }
+.bars { display: grid; gap: 18px; }
+.barrow { display: grid; gap: 6px; }
+.barrow .top2 { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.barrow .name { font-weight: 500; }
+.barrow .val { font-variant-numeric: tabular-nums; font-weight: 600; }
+.track { height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; position: relative; }
+.track .f { height: 100%; border-radius: 999px; }
+.track .f.good { background: var(--good); } .track .f.mid { background: var(--mid); } .track .f.low { background: var(--low); }
+.barrow .note { font-size: 0.88rem; color: var(--muted); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.list li { font-size: 0.93rem; display: grid; gap: 2px; padding-left: 12px; border-left: 3px solid var(--line); }
+.list.good li { border-color: var(--good); } .list.low li { border-color: var(--low); }
+.list .ans { font-size: 0.82rem; color: var(--muted); }
+.gap { background: var(--accent-soft); border-radius: var(--radius); padding: 20px 24px; display: grid; gap: 8px; }
+.openans { display: grid; gap: 14px; }
+.openans .item { display: grid; gap: 4px; }
+.openans .a { white-space: pre-wrap; padding: 10px 14px; background: var(--bg); border-radius: 10px; }
+.foot { font-size: 0.85rem; color: var(--muted); }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 0.9rem; }
+
+@media (max-width: 620px) {
+  .opts.scale { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opts.scale.n3 { grid-template-columns: 1fr; }
+  .score { grid-template-columns: 1fr; justify-items: start; }
+  .two { grid-template-columns: 1fr; }
+  .rail .lbl .secname { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <button class="brand" id="homeBtn" type="button" aria-label="Volver al inicio">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8" cy="12" r="5.5" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="12" r="5.5" stroke="var(--accent)" stroke-width="2"/></svg>
+      Diagnósticos de Equipo
+    </button>
+  </header>
+  <main id="app"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---------- Contenido ----------
+const S = ["Siempre","A veces","Rara vez","Nunca"];
+const A = ["Totalmente de acuerdo","Algo de acuerdo","Poco de acuerdo","En desacuerdo"];
+
+const COLAB_SECTIONS = [
+  { id: "self", title: "Mis prácticas de comunicación", hint: "Cómo te comunicás vos con otras áreas.", qs: [
+    ["Busco la opinión de otros departamentos antes de tomar decisiones clave.", S],
+    ["Entiendo cómo mi trabajo impacta a otros equipos dentro del negocio.", A],
+    ["Tomo la iniciativa de alinear objetivos con colegas de otras funciones.", S],
+    ["Me siento con confianza y claridad al comunicarme entre funciones.", S],
+    ["Cuando surgen problemas que involucran a varios equipos, me comunico directamente para resolverlos.", S],
+  ]},
+  { id: "team", title: "Cultura de equipo y colaboración", hint: "Cómo funciona tu equipo en relación con los demás.", qs: [
+    ["Mi equipo entiende y toma en cuenta las prioridades de otros departamentos.", S],
+    ["Las reuniones interfuncionales en nuestra organización son colaborativas y orientadas a resultados.", S],
+    ["Es seguro y está bien visto dar o recibir feedback entre departamentos.", S],
+    ["Cuando surge fricción entre equipos, se aborda de manera directa y constructiva.", S],
+    ["Reconocemos y celebramos los logros que resultan de la colaboración entre equipos.", S],
+  ]},
+  { id: "flow", title: "Cómo fluye la comunicación", hint: "Qué pasa cuando el trabajo cruza de un área a otra.", qs: [
+    ["Cuando empiezo un nuevo proyecto, suelo tener claridad sobre cómo afectará a otros equipos.", S],
+    ["En las reuniones con otras áreas, siento que se entienden los objetivos comunes.", A],
+    ["Cuando hay confusión entre áreas, ¿cómo suele resolverse?", ["Conversación directa","Por escalamiento","Con evasión o espera","No se resuelve fácilmente"]],
+  ]},
+  { id: "patterns", title: "Patrones y percepciones", hint: "Los hábitos que se repiten en el día a día.", qs: [
+    ["En nuestro día a día, las decisiones se toman…", ["Con múltiples puntos de vista","Según el criterio de cada área","Con presión de plazos más que colaboración","De forma poco conectada entre equipos"]],
+    ["¿Qué tan común es que compartamos información antes de que sea “necesaria”?", ["Muy común","Ocasional","Solo si hay un problema","Rara vez sucede"]],
+  ]},
+  { id: "env", title: "Percepciones del entorno", hint: "Tu lectura general del clima entre áreas.", qs: [
+    ["Cuando pienso en cómo colaboran otras áreas con la mía, diría que:", ["Suelen anticiparse y compartir información útil","Colaboran cuando se les pide","Están demasiado enfocadas en lo suyo","Hay fricción o poca conexión"]],
+    ["En conversaciones con otras áreas, lo que más noto es:", ["Curiosidad por entender nuestras necesidades","Deseo de resolver cosas rápido y seguir","Enfoque en lo propio, sin mucho contexto","Falta de claridad sobre objetivos comunes"]],
+    ["Si tuviera que describir la comunicación entre áreas, diría que es…", ["Fluida y basada en la confianza","Funcional, pero limitada","Lenta o con muchos malentendidos","Fragmentada y reactiva"]],
+  ]},
+  { id: "others", title: "Percepción sobre otras áreas", hint: "Cómo vivís la colaboración que recibís de otros equipos.", qs: [
+    ["Otros equipos anticipan cómo sus decisiones afectan a mi área.", S],
+    ["En general, otras áreas muestran interés genuino por los objetivos de mi equipo.", S],
+    ["En momentos de urgencia, otros equipos se activan de forma colaborativa y sin resistencias.", S],
+    ["Hay disposición por parte de otros equipos para ajustar planes cuando hay impacto cruzado.", S],
+    ["Percibo una cultura de apoyo mutuo entre departamentos, no solo cumplimiento de tareas.", S],
+  ]},
+];
+
+const CULTURE_SECTION = { id: "culture", title: "BeloCultura", hint: "Valores, competencias y No-Negociables de Belo. Las preguntas abiertas son opcionales.", qs: [
+  ["Tengo claras las diferencias entre Valores, Competencias y No-Negociables en Belo.", ["Totalmente","Más o menos","Para nada"]],
+  ["Mis cuatro No-Negociables top son:", null],
+  ["¿Cuáles son los valores más difíciles de vivir en tu rol? ¿Qué los hace desafiantes?", null],
+  ["¿Creés que la cultura de Belo refleja los valores declarados? ¿Tenés algún ejemplo que quieras compartir?", null],
+  ["¿Qué tres palabras describen mejor la cultura de Belo hoy en día?", null],
+  ["¿Dónde ves gaps entre lo que decimos que valoramos y lo que realmente hacemos?", null],
+]};
+
+const PURPOSE_COLAB = "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas. Tu perspectiva es clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.";
+const DIAGNOSTICS = [
+  { id: "colab", title: "Colaboración Interfuncional", minutes: "5–7 min",
+    blurb: "Cómo fluyen la colaboración y la comunicación entre áreas: fortalezas, silos y oportunidades.",
+    purpose: PURPOSE_COLAB, sections: COLAB_SECTIONS },
+  { id: "colab-cultura", title: "Colaboración Interfuncional & Cultura", minutes: "10 min",
+    blurb: "El diagnóstico de colaboración más una sección sobre la cultura de Belo y sus valores.",
+    purpose: "El propósito de esta encuesta es identificar cómo fluye la colaboración y la comunicación entre áreas, y el estado de la cultura de Belo. Tus perspectivas son clave para detectar fortalezas, patrones de trabajo en silos y oportunidades de mejora.",
+    sections: [...COLAB_SECTIONS, CULTURE_SECTION] },
+];
+
+// ---------- Envío de respuestas ----------
+// Cada diagnóstico envía sus respuestas al Google Form original. "entries" sigue el orden exacto de las preguntas de arriba.
+// Si agregás, quitás o reordenás preguntas, actualizá también esta lista (o pedile a Claude que lo haga).
+const COLAB_ENTRIES = [399240661,1514542835,1508492944,207375225,2023814821,868157050,46991177,1201222270,933284939,1341063189,1511839627,2142852986,1732709139,654695480,1913096800,409174924,1247931239,1121817969,261054873,2133368063,535311757,878962806,137177445];
+const SUBMIT = {
+  "colab": { formId: "1FAIpQLScXFn-QiMze6zwby-uIF4_QrqD-yKrUYaQxnfDZbD357LdTlg", pages: 7, nameEntry: null, entries: COLAB_ENTRIES },
+  "colab-cultura": { formId: "1FAIpQLSen_m6SKq5MabHCaFJQfXOuZMHDI2Rga049r-jdSKlMcVpdLw", pages: 8, nameEntry: null,
+    entries: [...COLAB_ENTRIES, 676983646,364431460,315427670,890011333,1392156510,1769054710] },
+};
+
+// ---------- Estado ----------
+const app = document.getElementById("app");
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+let state = { view: "home", diag: null, sec: 0, answers: {} };
+const key = id => "diag-draft-" + id;
+const qid = (s, i) => s + "." + i;
+function save() { if (state.diag) store.set(key(state.diag.id), { sec: state.sec, answers: state.answers, view: state.view }); }
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2200);
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const go = (view) => { state.view = view; save(); render(); window.scrollTo({ top: 0 }); };
+
+// ---------- Vistas ----------
+function renderHome() {
+  app.innerHTML = `
+    <section class="hero">
+      <span class="eyebrow">Encuestas internas · anónimas</span>
+      <h1>¿Cómo trabajamos entre áreas?</h1>
+      <p>Elegí un diagnóstico. Vas a responder una sección a la vez. Al final elegís si enviar tus respuestas de forma anónima.</p>
+    </section>
+    <div class="cards">
+      ${DIAGNOSTICS.map(d => {
+        const closed = d.sections.flatMap(s => s.qs).filter(q => q[1]).length;
+        const open = d.sections.flatMap(s => s.qs).filter(q => !q[1]).length;
+        const draft = store.get(key(d.id));
+        const started = draft && Object.keys(draft.answers || {}).length;
+        return `<button class="dcard" type="button" data-d="${d.id}">
+          <div class="meta"><span class="chip accent">${d.minutes}</span><span class="chip">${d.sections.length} secciones</span><span class="chip">${closed} preguntas${open ? ` + ${open} abiertas` : ""}</span></div>
+          <h2>${esc(d.title)}</h2>
+          <p class="muted">${esc(d.blurb)}</p>
+          <p class="sections">${d.sections.map(s => esc(s.title)).join(" · ")}</p>
+          ${started ? `<span class="resume">Tenés respuestas guardadas. Podés retomar donde quedaste.</span>` : ""}
+          <span class="go">${started ? "Continuar" : "Empezar"} →</span>
+        </button>`;
+      }).join("")}
+    </div>`;
+  app.querySelectorAll("[data-d]").forEach(b => b.onclick = () => {
+    const d = DIAGNOSTICS.find(x => x.id === b.dataset.d);
+    const draft = store.get(key(d.id));
+    state = { view: "intro", diag: d, sec: 0, answers: {} };
+    if (draft && Object.keys(draft.answers || {}).length) { state.answers = draft.answers; state.sec = draft.sec || 0; state.view = "survey"; }
+    render(); window.scrollTo({ top: 0 });
+  });
+}
+
+function renderIntro() {
+  const d = state.diag;
+  app.innerHTML = `
+    <section class="intro">
+      <span class="eyebrow">Diagnóstico · ${d.minutes}</span>
+      <h1>${esc(d.title)}</h1>
+      <p class="muted" style="max-width:60ch;font-size:1.05rem">${esc(d.purpose)}</p>
+      <div class="panel">
+        <h3>Antes de empezar</h3>
+        <ul>
+          <li>Marcá la opción que más se parece a lo que realmente ocurre en tu día a día.</li>
+          <li>No hay respuestas correctas o incorrectas.</li>
+          <li>Las respuestas son completamente anónimas.</li>
+          <li>Respondé con honestidad: tu experiencia es esencial.</li>
+        </ul>
+      </div>
+      <div class="row"><button class="btn" id="start" type="button">Empezar</button><button class="btn ghost" id="back" type="button">Volver</button></div>
+    </section>`;
+  document.getElementById("start").onclick = () => go("survey");
+  document.getElementById("back").onclick = () => go("home");
+}
+
+function renderSurvey(showMissing = false) {
+  const d = state.diag, s = d.sections[state.sec];
+  const total = d.sections.flatMap(x => x.qs).filter(q => q[1]).length;
+  const done = Object.entries(state.answers).filter(([k, v]) => typeof v === "number").length;
+  let n = d.sections.slice(0, state.sec).reduce((a, x) => a + x.qs.length, 0);
+  const last = state.sec === d.sections.length - 1;
+  app.innerHTML = `
+    <div class="rail" aria-label="Progreso">
+      <div class="lbl"><span>Sección ${state.sec + 1} de ${d.sections.length}<span class="secname"> · ${esc(s.title)}</span></span><span>${done} de ${total} respondidas</span></div>
+      <div class="steps">${d.sections.map((_, i) => `<span class="step ${i < state.sec ? "done" : i === state.sec ? "now" : ""}"></span>`).join("")}</div>
+    </div>
+    <section class="sechead">
+      <span class="eyebrow">${esc(d.title)}</span>
+      <h2>${esc(s.title)}</h2>
+      <p class="muted">${esc(s.hint)}</p>
+    </section>
+    <div class="qs">
+      ${s.qs.map(([text, opts], i) => {
+        n++;
+        const id = qid(s.id, i), val = state.answers[id];
+        const miss = showMissing && opts && typeof val !== "number";
+        if (!opts) return `<div class="q" id="q-${id}">
+            <label class="qt" for="t-${id}"><span class="qn">${n}</span><span>${esc(text)} <span class="optional">Opcional</span></span></label>
+            <textarea id="t-${id}" data-q="${id}" placeholder="Escribí tu respuesta…">${esc(val || "")}</textarea>
+          </div>`;
+        const scale = opts.every(o => o.length <= 22);
+        return `<fieldset class="q ${miss ? "missing" : ""}" id="q-${id}" style="margin:0">
+          <legend class="qt" style="padding:0"><span class="qn">${n}</span><span>${esc(text)}</span></legend>
+          <div class="opts ${scale ? "scale" : ""} ${opts.length === 3 ? "n3" : ""}">
+            ${opts.map((o, j) => `<label class="opt"><input type="radio" id="r-${id}-${j}" name="${id}" value="${j}" ${val === j ? "checked" : ""}><span class="dot"></span><span>${esc(o)}</span></label>`).join("")}
+          </div>
+        </fieldset>`;
+      }).join("")}
+    </div>
+    <div class="nav">
+      ${state.sec > 0 ? `<button class="btn ghost" id="prev" type="button">← Anterior</button>` : `<button class="btn ghost" id="prev" type="button">← Inicio</button>`}
+      <span class="spacer"></span>
+      <span class="warn" id="warn" ${showMissing ? "" : "hidden"}>Faltan respuestas en esta sección.</span>
+      <button class="btn" id="next" type="button">${last ? "Revisar y enviar →" : "Siguiente →"}</button>
+    </div>`;
+  app.querySelectorAll("input[type=radio]").forEach(r => r.onchange = () => {
+    state.answers[r.name] = +r.value; save();
+    const box = document.getElementById("q-" + r.name); box.classList.remove("missing");
+    const doneNow = Object.values(state.answers).filter(v => typeof v === "number").length;
+    app.querySelector(".lbl span:last-child").textContent = `${doneNow} de ${total} respondidas`;
+  });
+  app.querySelectorAll("textarea").forEach(t => t.oninput = () => { state.answers[t.dataset.q] = t.value; save(); });
+  document.getElementById("prev").onclick = () => { if (state.sec > 0) { state.sec--; go("survey"); } else go("home"); };
+  document.getElementById("next").onclick = () => {
+    const missing = s.qs.map((q, i) => q[1] && typeof state.answers[qid(s.id, i)] !== "number" ? qid(s.id, i) : null).filter(Boolean);
+    if (missing.length) { renderSurvey(true); document.getElementById("q-" + missing[0]).scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+    if (last) go("submit"); else { state.sec++; go("survey"); }
+  };
+}
+
+async function sendAnswers(d, name) {
+  const cfg = SUBMIT[d.id];
+  const body = new URLSearchParams();
+  let k = 0;
+  d.sections.forEach(s => s.qs.forEach(([text, opts], i) => {
+    const v = state.answers[qid(s.id, i)], entry = cfg.entries[k++];
+    if (opts && typeof v === "number") body.append("entry." + entry, originalLabel(text, opts[v]));
+    else if (!opts && v && v.trim()) body.append("entry." + entry, v.trim());
+  }));
+  if (cfg.nameEntry && name) body.append("entry." + cfg.nameEntry, name);
+  body.append("pageHistory", Array.from({ length: cfg.pages }, (_, i) => i).join(","));
+  await fetch(`https://docs.google.com/forms/d/e/${cfg.formId}/formResponse`, { method: "POST", mode: "no-cors", body });
+}
+// Algunas opciones tienen tildes corregidas en la app; el Google Form espera el texto original.
+const originalLabel = (question, label) =>
+  label === "Más o menos" ? "Mas o Menos"
+  : label === "En desacuerdo" && question.startsWith("Entiendo cómo mi trabajo") ? "En desacuérdo"
+  : label;
+
+function renderSubmit() {
+  const d = state.diag, cfg = SUBMIT[d.id];
+  const total = d.sections.flatMap(x => x.qs).filter(q => q[1]).length;
+  const done = Object.values(state.answers).filter(v => typeof v === "number").length;
+  const anon = state.anon !== false;
+  app.innerHTML = `
+    <section class="intro">
+      <span class="eyebrow">${esc(d.title)} · Último paso</span>
+      <h1>Revisá y enviá</h1>
+      <p class="muted" style="font-size:1.05rem">Respondiste ${done} de ${total} preguntas. Podés volver atrás para cambiar algo antes de enviar.</p>
+      <fieldset class="panel" style="margin:0">
+        <legend class="qt" style="padding:0;font-weight:600">¿Cómo querés enviar tus respuestas?</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" id="anon-yes" name="anon" value="1" ${anon ? "checked" : ""}><span class="dot"></span><span><strong>De forma anónima</strong><br><span class="muted" style="font-weight:400">No se guarda tu nombre ni tu email.</span></span></label>
+          ${cfg.nameEntry ? `<label class="opt"><input type="radio" id="anon-no" name="anon" value="0" ${anon ? "" : "checked"}><span class="dot"></span><span><strong>Con mi nombre</strong><br><span class="muted" style="font-weight:400">Solo lo ve quien analiza la encuesta.</span></span></label>` : ""}
+        </div>
+        <div id="nameBox" ${anon ? "hidden" : ""} style="display:grid;gap:6px">
+          <label for="name" class="muted" style="font-size:.9rem">Tu nombre</label>
+          <input id="name" type="text" autocomplete="name" value="${esc(state.name || "")}" style="font:inherit;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)">
+        </div>
+      </fieldset>
+      <div class="nav" style="padding:0">
+        <button class="btn ghost" id="back" type="button">← Volver</button>
+        <span class="spacer"></span>
+        <span class="warn" id="err" hidden></span>
+        <button class="btn" id="send" type="button">Enviar respuestas</button>
+      </div>
+    </section>`;
+  app.querySelectorAll("input[name=anon]").forEach(r => r.onchange = () => { state.anon = r.value === "1"; document.getElementById("nameBox").hidden = state.anon; });
+  const nameEl = document.getElementById("name"); nameEl.oninput = () => state.name = nameEl.value;
+  document.getElementById("back").onclick = () => { state.sec = d.sections.length - 1; go("survey"); };
+  document.getElementById("send").onclick = async () => {
+    const btn = document.getElementById("send"), err = document.getElementById("err");
+    const name = state.anon === false ? (state.name || "").trim() : "";
+    if (state.anon === false && !name) { err.textContent = "Escribí tu nombre o elegí enviar de forma anónima."; err.hidden = false; return; }
+    btn.disabled = true; btn.textContent = "Enviando…"; err.hidden = true;
+    try { await sendAnswers(d, name); store.del(key(d.id)); state.answers = {}; go("thanks"); }
+    catch { btn.disabled = false; btn.textContent = "Reintentar"; err.textContent = "No se pudieron enviar. Revisá tu conexión e intentá de nuevo."; err.hidden = false; }
+  };
+}
+
+function renderThanks() {
+  const d = state.diag;
+  app.innerHTML = `
+    <section class="intro">
+      <span class="eyebrow">${esc(d.title)}</span>
+      <h1>¡Gracias por responder!</h1>
+      <p class="muted" style="font-size:1.05rem;max-width:56ch">Tus respuestas se enviaron. Con las respuestas de todo el equipo vamos a armar el diagnóstico y compartir los resultados.</p>
+      <div class="row"><button class="btn ghost" id="home2" type="button">Volver al inicio</button></div>
+    </section>`;
+  document.getElementById("home2").onclick = () => go("home");
+}
+
+function render() {
+  if (state.view === "home" || !state.diag) return renderHome();
+  if (state.view === "intro") return renderIntro();
+  if (state.view === "survey") return renderSurvey();
+  if (state.view === "submit") return renderSubmit();
+  if (state.view === "thanks") return renderThanks();
+}
+document.getElementById("homeBtn").onclick = () => { state.view = "home"; render(); window.scrollTo({ top: 0 }); };
+render();
+</script>
+
+</body>
+</html>
