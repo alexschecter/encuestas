@@ -407,7 +407,7 @@ function barras_(sl, d, filas, l, t, w, h, anchoEtiqueta) {
   const ley = caja_(sl, gs.map(function (x) { return "■ " + x.nombre; }).join("     "), l + anchoEtiqueta, t - 4, w - anchoEtiqueta, 18, { size: 10, color: COL.ink }).getText();
   let pos = 0;
   gs.forEach(function (x) { ley.getRange(pos, pos + 1).getTextStyle().setForegroundColor(x.color); pos += x.nombre.length + 2 + 5; });
-  const top = t + 18, alto = (h - 18) / filas.length, barH = Math.min(12, (alto - 10) / gs.length), maxW = w - anchoEtiqueta - 40;
+  const top = t + 18, alto = (h - 18) / filas.length, barH = Math.min(12, (alto - 10) / gs.length), maxW = w - anchoEtiqueta - 92;
   filas.forEach(function (f, i) {
     const y = top + i * alto;
     const et = caja_(sl, f.etiqueta + (f.desc ? "\n" + f.desc : ""), l, y, anchoEtiqueta - 8, alto, { size: 10.5, color: COL.ink, align: "end", v: "middle" });
@@ -417,7 +417,8 @@ function barras_(sl, d, filas, l, t, w, h, anchoEtiqueta) {
       const v = f.valores[x.k];
       const yy = y0 + gi * (barH + 2);
       if (v !== null && v > 0) rect_(sl, l + anchoEtiqueta, yy, Math.max(2, maxW * v / 100), barH, x.color);
-      caja_(sl, v === null ? "–" : String(v), l + anchoEtiqueta + Math.max(2, maxW * (v || 0) / 100) + 2, yy - 4, 36, barH + 8, { size: 9.5, color: COL.ink, v: "middle" });
+      const et = caja_(sl, v === null ? "–" : v + "  " + banda_(v).t, l + anchoEtiqueta + Math.max(2, maxW * (v || 0) / 100) + 2, yy - 4, 92, barH + 8, { size: 9.5, color: COL.ink, v: "middle" }).getText();
+      if (v !== null) et.getRange(0, String(v).length).getTextStyle().setBold(true);
     });
   });
 }
@@ -544,7 +545,11 @@ function construirResumen_(ctx) {
     lado[1] = "La mayor distancia entre los dos grupos está en " + gap.titulo + ": " + gap.por.mm + " para mandos medios y " + gap.por.cl + " para Dirección.\n\n" + lado[1];
   }
   caja_(sl, lado[0], 530, 90, 150, 22, { size: 14, bold: true, color: COL.navy });
-  caja_(sl, lado[1], 530, 114, 150, 240, { size: 11.5 });
+  caja_(sl, lado[1], 530, 114, 150, 150, { size: 11 });
+  ESTADIOS.forEach(function (e, i) {
+    circulo_(sl, 532, 290 + i * 17, 9, e[3]);
+    caja_(sl, e[0] + "  " + NIVELES[i], 544, 284 + i * 17, 140, 20, { size: 9.5, v: "middle" });
+  });
 
   // 5 y 6. Fortalezas y prioridades
   const qs = d.preguntas.filter(function (q) { return q.opciones && q.puntaje !== null; });
