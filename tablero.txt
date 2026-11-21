@@ -466,25 +466,30 @@ function construirResumen_(ctx) {
   });
   const estadioDe = estadio_;
   sl = contenido_(ctx, "Estadio de colaboración", "Puntos obtenidos en todas las respuestas sobre el total posible, en %.");
-  const colsE = [{ t: "Escala", l: 30, w: 90 }, { t: "Estadio", l: 120, w: 290 }].concat(GRUPOS.slice().reverse().filter(function (x) { return general[x.k] !== undefined; }).map(function (x, i) { return { t: x.nombre, l: 420 + i * 135, w: 130, k: x.k, color: x.color }; }));
-  rect_(sl, 30, 84, 660, 30, COL.navy);
-  colsE.forEach(function (c) { caja_(sl, c.t, c.l, 84, c.w, 30, { size: 12, bold: true, color: COL.white, v: "middle", align: c.k ? "center" : "start" }); });
-  ESTADIOS.forEach(function (e, i) {
-    const y = 114 + i * 50;
-    if (i % 2 === 0) rect_(sl, 30, y, 660, 50, COL.mist);
-    caja_(sl, e[0], 30, y, 90, 50, { size: 13, v: "middle", color: COL.mute });
-    circulo_(sl, 128, y + 19, 12, e[3]);
-    caja_(sl, e[1], 144, y, 270, 50, { size: 14, bold: true, v: "middle", color: COL.navy });
-    colsE.forEach(function (c) {
-      if (!c.k) return;
-      if (estadioDe(general[c.k]) !== e) { circulo_(sl, c.l + c.w / 2 - 3, y + 22, 6, COL.line); return; }
-      const p = forma_(sl, SlidesApp.ShapeType.ROUND_RECTANGLE, c.l + 20, y + 8, c.w - 40, 34, e[3]);
-      const tr = p.getText(); tr.setText(general[c.k] + "%");
-      tr.getTextStyle().setFontFamily(FONT).setFontSize(20).setBold(true).setForegroundColor(e[3] === COL.sky || e[3] === COL.sand ? COL.navy : COL.white);
-      tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER); p.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
-    });
+  // Una sola regla de 0 a 100 con los cuatro estadios; Dirección arriba y Mandos medios abajo.
+  const BX = 50, BW = 620, BY = 176, BH = 34;
+  ESTADIOS.slice().reverse().forEach(function (e, i) {
+    const oscuro = e[3] === COL.coral || e[3] === COL.blue;
+    const z = rect_(sl, BX + i * BW / 4, BY, BW / 4, BH, e[3]);
+    const tr = z.getText(); tr.setText(e[0]);
+    tr.getTextStyle().setFontFamily(FONT).setFontSize(11).setBold(true).setForegroundColor(oscuro ? COL.white : COL.navy);
+    tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER); z.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
+    caja_(sl, e[1], BX + i * BW / 4, 300, BW / 4, 40, { size: 12, bold: true, color: COL.navy, align: "center" });
   });
-  caja_(sl, "El resultado de cada grupo aparece en la fila de su estadio.   " + gs.slice().reverse().map(function (x) { return x.nombre + ": " + estadioDe(general[x.k])[1].toLowerCase() + " (" + general[x.k] + "%)"; }).join("   ·   "), 30, 318, 660, 40, { size: 12, color: COL.ink, v: "middle" });
+  GRUPOS.slice().reverse().filter(function (x) { return general[x.k] !== undefined && general[x.k] !== null; }).forEach(function (x, i) {
+    const v = general[x.k], cx = Math.max(BX + 50, Math.min(BX + BW - 50, BX + v / 100 * BW)), mx = BX + v / 100 * BW;
+    const color = x.k === "cl" ? COL.navy : "#2F6DB5";
+    if (i === 0) {
+      caja_(sl, v + "%", cx - 60, 104, 120, 34, { size: 26, bold: true, color: color, align: "center", v: "bottom" });
+      caja_(sl, x.nombre, cx - 70, 138, 140, 18, { size: 11, align: "center" });
+      forma_(sl, SlidesApp.ShapeType.FLOWCHART_MERGE, mx - 8, 158, 16, 12, color);
+    } else {
+      forma_(sl, SlidesApp.ShapeType.TRIANGLE, mx - 8, 216, 16, 12, color);
+      caja_(sl, x.nombre, cx - 70, 230, 140, 18, { size: 11, align: "center" });
+      caja_(sl, v + "%", cx - 60, 248, 120, 34, { size: 26, bold: true, color: color, align: "center" });
+    }
+  });
+  caja_(sl, gs.slice().reverse().map(function (x) { return x.nombre + ": " + estadioDe(general[x.k])[1].toLowerCase() + " (" + general[x.k] + "%)"; }).join("   ·   "), 30, 340, 660, 26, { size: 12, color: COL.mute, align: "center", v: "middle" });
 
   // 4. Panorama por dimensión
   let titulo4 = "Puntaje por dimensión";
