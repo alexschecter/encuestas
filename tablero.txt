@@ -8,6 +8,7 @@
  * 3. Arriba a la derecha: Implementar → Nueva implementación → ícono de engranaje → Aplicación web.
  *    Ejecutar como: Yo. Quién tiene acceso: Solo yo. → Implementar.
  * 4. Autorizá los permisos y abrí la URL de la aplicación web. Guardala en favoritos.
+ * 5. (Una sola vez) Elegí la función "agregarCampoCliente" arriba y tocá Ejecutar: agrega el campo "Cliente" a los formularios.
  */
 
 const ENCUESTAS = [
@@ -39,37 +40,58 @@ function buscarFormulario_(enc) {
   return null;
 }
 
+const CAMPO_CLIENTE = "Cliente";
+
+// Ejecutar UNA vez: agrega el campo oculto "Cliente" a los 4 formularios (la encuesta lo completa sola según el enlace).
+function agregarCampoCliente() {
+  ENCUESTAS.forEach(function (enc) {
+    const form = buscarFormulario_(enc);
+    if (!form) { Logger.log(enc.id + " | no encontrado"); return; }
+    const ya = form.getItems().filter(function (i) { return i.getTitle() === CAMPO_CLIENTE; })[0];
+    const item = ya || form.addTextItem().setTitle(CAMPO_CLIENTE).setHelpText("Lo completa la encuesta automáticamente.");
+    Logger.log(enc.id + " | listo");
+  });
+}
+
 function obtenerDatos() {
   return JSON.stringify(ENCUESTAS.map(function (enc) {
     const form = buscarFormulario_(enc);
     if (!form) return { id: enc.id, grupo: enc.grupo, tipo: enc.tipo, titulo: enc.titulo, error: "No encontré este formulario en tu Drive." };
     const respuestas = form.getResponses();
-    let seccion = "";
+    let seccion = "", idCliente = null;
     const preguntas = [];
     form.getItems().forEach(function (item) {
       const t = item.getType();
       if (t === FormApp.ItemType.PAGE_BREAK) { seccion = item.getTitle(); return; }
+      if (item.getTitle() === CAMPO_CLIENTE) { idCliente = item.getId(); return; }
       if (item.getTitle() === "Nombre (opcional)") return; // los nombres no se muestran en el tablero
       if (t === FormApp.ItemType.MULTIPLE_CHOICE) {
         const opciones = item.asMultipleChoiceItem().getChoices().map(function (c) { return c.getValue(); });
-        preguntas.push({ id: item.getId(), seccion: seccion, titulo: item.getTitle(), opciones: opciones, conteos: opciones.map(function () { return 0; }), textos: null });
+        preguntas.push({ id: item.getId(), seccion: seccion, titulo: item.getTitle(), opciones: opciones });
       } else if (t === FormApp.ItemType.PARAGRAPH_TEXT || t === FormApp.ItemType.TEXT) {
-        preguntas.push({ id: item.getId(), seccion: seccion, titulo: item.getTitle(), opciones: null, conteos: null, textos: [] });
+        preguntas.push({ id: item.getId(), seccion: seccion, titulo: item.getTitle(), opciones: null });
       }
     });
-    const porId = {};
-    preguntas.forEach(function (p) { porId[p.id] = p; });
-    let ultima = null;
+    const pos = {};
+    preguntas.forEach(function (p, i) { pos[p.id] = i; });
+    const clientes = {};
     respuestas.forEach(function (r) {
-      const ts = r.getTimestamp(); if (!ultima || ts > ultima) ultima = ts;
-      r.getItemResponses().forEach(function (ir) {
-        const p = porId[ir.getItem().getId()]; if (!p) return;
-        const v = ir.getResponse();
-        if (p.opciones) { const j = p.opciones.indexOf(v); if (j >= 0) p.conteos[j]++; }
-        else if (v && String(v).trim()) p.textos.push(String(v).trim());
+      let cliente = "";
+      const its = r.getItemResponses();
+      its.forEach(function (ir) { if (ir.getItem().getId() === idCliente) cliente = String(ir.getResponse() || "").trim(); });
+      cliente = cliente || "(sin cliente)";
+      const c = clientes[cliente] || (clientes[cliente] = { n: 0, ultima: null, conteos: preguntas.map(function (p) { return p.opciones ? p.opciones.map(function () { return 0; }) : null; }), textos: preguntas.map(function (p) { return p.opciones ? null : []; }) });
+      c.n++;
+      const ts = r.getTimestamp(); if (!c.ultima || ts > c.ultima) c.ultima = ts;
+      its.forEach(function (ir) {
+        const i = pos[ir.getItem().getId()]; if (i === undefined) return;
+        const p = preguntas[i], v = ir.getResponse();
+        if (p.opciones) { const j = p.opciones.indexOf(v); if (j >= 0) c.conteos[i][j]++; }
+        else if (v && String(v).trim()) c.textos[i].push(String(v).trim());
       });
     });
-    return { id: enc.id, grupo: enc.grupo, tipo: enc.tipo, titulo: enc.titulo, n: respuestas.length, ultima: ultima ? ultima.toISOString() : null, preguntas: preguntas };
+    Object.keys(clientes).forEach(function (k) { clientes[k].ultima = clientes[k].ultima ? clientes[k].ultima.toISOString() : null; });
+    return { id: enc.id, grupo: enc.grupo, tipo: enc.tipo, titulo: enc.titulo, preguntas: preguntas, clientes: clientes };
   }));
 }
 
@@ -117,6 +139,7 @@ blockquote { margin:0 0 6px; padding:8px 12px; background:var(--bg); border-radi
 </style></head><body><div class="wrap">
 <div class="top"><div><span class="eyebrow">Solo para vos · se actualiza solo</span><h1>Tablero de encuestas</h1></div><span class="sp"></span>
 <span class="muted" id="stamp">Cargando…</span><button class="btn" id="refresh">Actualizar</button></div>
+<div class="top" style="padding:0"><label class="muted" for="cliente">Cliente</label><select id="cliente" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px"></select></div>
 <div class="tabs" role="tablist">
   <button class="tab" role="tab" data-tipo="colab" aria-selected="true">Colaboración</button>
   <button class="tab" role="tab" data-tipo="cultura" aria-selected="false">Colaboración & Cultura</button>
@@ -124,7 +147,21 @@ blockquote { margin:0 0 6px; padding:8px 12px; background:var(--bg); border-radi
 <div id="out"><p class="muted">Leyendo las respuestas de tus formularios…</p></div>
 </div>
 <script>
-var DATA = null, TIPO = "colab";
+var RAW = null, DATA = null, TIPO = "colab", CLIENTE = null;
+function buildView(){
+  var names = {};
+  RAW.forEach(function(s){ if (s.clientes) Object.keys(s.clientes).forEach(function(k){ names[k] = (names[k]||0) + s.clientes[k].n; }); });
+  var list = Object.keys(names).sort(function(a,b){ return a === "(sin cliente)" ? 1 : b === "(sin cliente)" ? -1 : a.localeCompare(b); });
+  if (!CLIENTE || list.indexOf(CLIENTE) < 0) CLIENTE = list[0] || null;
+  var sel = document.getElementById("cliente");
+  sel.innerHTML = list.length ? list.map(function(k){ return '<option value="'+esc(k)+'"'+(k===CLIENTE?' selected':'')+'>'+esc(k)+' ('+names[k]+')</option>'; }).join("") : '<option>Todavía no hay respuestas</option>';
+  DATA = RAW.map(function(s){
+    if (s.error) return s;
+    var c = (CLIENTE && s.clientes[CLIENTE]) || { n: 0, ultima: null, conteos: s.preguntas.map(function(p){ return p.opciones ? p.opciones.map(function(){return 0;}) : null; }), textos: s.preguntas.map(function(p){ return p.opciones ? null : []; }) };
+    return { id: s.id, grupo: s.grupo, tipo: s.tipo, titulo: s.titulo, n: c.n, ultima: c.ultima,
+      preguntas: s.preguntas.map(function(p, i){ return { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, conteos: c.conteos[i], textos: c.textos[i] }; }) };
+  });
+}
 var COLORS = ["var(--c0)","var(--c1)","var(--c2)","var(--c3)"], COLORS3 = ["var(--c0)","var(--c1)","var(--c3)"];
 var GROUP = { mm: "Mandos medios", cl: "Dirección (C-level)" };
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
@@ -177,10 +214,11 @@ function render(){
 }
 function load(){
   document.getElementById("stamp").textContent = "Actualizando…";
-  google.script.run.withSuccessHandler(function(json){ DATA = JSON.parse(json); render(); document.getElementById("stamp").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}); })
+  google.script.run.withSuccessHandler(function(json){ RAW = JSON.parse(json); buildView(); render(); document.getElementById("stamp").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}); })
     .withFailureHandler(function(e){ document.getElementById("stamp").textContent = "No se pudo actualizar: " + e.message; }).obtenerDatos();
 }
 document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ TIPO = t.dataset.tipo; document.querySelectorAll(".tab").forEach(function(x){ x.setAttribute("aria-selected", x===t); }); if (DATA) render(); }; });
 document.getElementById("refresh").onclick = load;
+document.getElementById("cliente").onchange = function(e){ CLIENTE = e.target.value; buildView(); render(); };
 load(); setInterval(load, 120000);
 </script></body></html>`;

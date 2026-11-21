@@ -265,7 +265,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch {} },
 };
 let state = { view: "home", diag: null, sec: 0, answers: {} };
-const key = id => "diag-draft-" + id;
+const key = id => "diag-draft-" + (state.client ? state.client + "/" : "") + id;
 const qid = (s, i) => s + "." + i;
 function save() { if (state.diag) store.set(key(state.diag.id), { sec: state.sec, answers: state.answers, view: state.view }); }
 
@@ -298,13 +298,17 @@ function renderClosed() {
 
 function startFromLink() {
   // Enlaces públicos: #colaboracion, #colaboracion-cultura, #colaboracion-direccion, #colaboracion-cultura-direccion
-  const h = decodeURIComponent(location.hash.slice(1)).replace(/^colaboracion/, "colab");
+  // Con cliente: #<cliente>/colaboracion (el cliente se guarda en el campo oculto "Cliente" del formulario)
+  const parts = decodeURIComponent(location.hash.slice(1)).split("/");
+  const h = parts.pop().replace(/^colaboracion/, "colab");
+  state.client = parts.join("/").trim();
   const d = DIAGNOSTICS.find(x => x.id === h);
+  const client = state.client;
   if (!d) { state = { view: "home", diag: null, sec: 0, answers: {} }; return render(); }
   const draft = store.get(key(d.id));
-  state = { view: "intro", diag: d, sec: 0, answers: {} };
+  state = { view: "intro", diag: d, sec: 0, answers: {}, client };
   if (!SUBMIT[d.id].formId) state.view = "closed";
-  else if (store.get("sent-" + d.id)) state.view = "thanks";
+  else if (store.get("sent-" + (client ? client + "/" : "") + d.id)) state.view = "thanks";
   else if (draft && Object.keys(draft.answers || {}).length) { state.answers = draft.answers; state.sec = draft.sec || 0; state.view = "survey"; }
   render(); window.scrollTo({ top: 0 });
 }
@@ -396,6 +400,7 @@ async function sendAnswers(d, name) {
     else if (!opts && v && v.trim()) body.append("entry." + entry, v.trim());
   }));
   if (cfg.nameEntry && name) body.append("entry." + cfg.nameEntry, name);
+  if (cfg.clientEntry && state.client) body.append("entry." + cfg.clientEntry, state.client);
   body.append("pageHistory", Array.from({ length: cfg.pages }, (_, i) => i).join(","));
   await fetch(`https://docs.google.com/forms/d/e/${cfg.formId}/formResponse`, { method: "POST", mode: "no-cors", body });
 }
@@ -435,7 +440,7 @@ function renderSubmit() {
     const name = state.anon === false ? (state.name || "").trim() : "";
     if (state.anon === false && !name) { err.textContent = "Escribí tu nombre o elegí enviar de forma anónima."; err.hidden = false; return; }
     btn.disabled = true; btn.textContent = "Enviando…"; err.hidden = true;
-    try { await sendAnswers(d, name); store.del(key(d.id)); store.set("sent-" + d.id, true); state.answers = {}; go("thanks"); }
+    try { await sendAnswers(d, name); store.del(key(d.id)); store.set("sent-" + (state.client ? state.client + "/" : "") + d.id, true); state.answers = {}; go("thanks"); }
     catch { btn.disabled = false; btn.textContent = "Reintentar"; err.textContent = "No se pudieron enviar. Revisá tu conexión e intentá de nuevo."; err.hidden = false; }
   };
 }
