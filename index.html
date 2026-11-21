@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diagnósticos de Equipo</title>
 <style>[hidden]{display:none!important}body{margin:0}</style>
 </head>
 <body>
@@ -335,7 +336,7 @@ function renderSurvey(showMissing = false) {
   const last = state.sec === d.sections.length - 1;
   app.innerHTML = `
     <div class="rail" aria-label="Progreso">
-      <div class="lbl"><span>Sección ${state.sec + 1} de ${d.sections.length}<span class="secname"> · ${esc(s.title)}</span></span><span>${done} de ${total} respondidas</span></div>
+      <div class="lbl"><span>Sección ${state.sec + 1} de ${d.sections.length}<span class="secname"> · ${esc(s.title)}</span></span><span id="count">${done} de ${total} respondidas</span></div>
       <div class="steps">${d.sections.map((_, i) => `<span class="step ${i < state.sec ? "done" : i === state.sec ? "now" : ""}"></span>`).join("")}</div>
     </div>
     <section class="sechead">
@@ -353,12 +354,12 @@ function renderSurvey(showMissing = false) {
             <textarea id="t-${id}" data-q="${id}" placeholder="Escribí tu respuesta…">${esc(val || "")}</textarea>
           </div>`;
         const scale = opts.every(o => o.length <= 22);
-        return `<fieldset class="q ${miss ? "missing" : ""}" id="q-${id}" style="margin:0">
-          <legend class="qt" style="padding:0"><span class="qn">${n}</span><span>${esc(text)}</span></legend>
+        return `<div role="radiogroup" aria-labelledby="l-${id}" class="q ${miss ? "missing" : ""}" id="q-${id}">
+          <div class="qt" id="l-${id}"><span class="qn">${n}</span><span>${esc(text)}</span></div>
           <div class="opts ${scale ? "scale" : ""} ${opts.length === 3 ? "n3" : ""}">
             ${opts.map((o, j) => `<label class="opt"><input type="radio" id="r-${id}-${j}" name="${id}" value="${j}" ${val === j ? "checked" : ""}><span class="dot"></span><span>${esc(o)}</span></label>`).join("")}
           </div>
-        </fieldset>`;
+        </div>`;
       }).join("")}
     </div>
     <div class="nav">
@@ -371,7 +372,7 @@ function renderSurvey(showMissing = false) {
     state.answers[r.name] = +r.value; save();
     const box = document.getElementById("q-" + r.name); box.classList.remove("missing");
     const doneNow = Object.values(state.answers).filter(v => typeof v === "number").length;
-    app.querySelector(".lbl span:last-child").textContent = `${doneNow} de ${total} respondidas`;
+    document.getElementById("count").textContent = `${doneNow} de ${total} respondidas`;
   });
   app.querySelectorAll("textarea").forEach(t => t.oninput = () => { state.answers[t.dataset.q] = t.value; save(); });
   document.getElementById("prev").onclick = () => { if (state.sec > 0) { state.sec--; go("survey"); } else go("home"); };
@@ -411,8 +412,8 @@ function renderSubmit() {
       <span class="eyebrow">${esc(d.title)} · Último paso</span>
       <h1>Revisá y enviá</h1>
       <p class="muted" style="font-size:1.05rem">Respondiste ${done} de ${total} preguntas. Podés volver atrás para cambiar algo antes de enviar.</p>
-      <fieldset class="panel" style="margin:0">
-        <legend class="qt" style="padding:0;font-weight:600">¿Cómo querés enviar tus respuestas?</legend>
+      <div class="panel" role="radiogroup" aria-labelledby="anon-l">
+        <div class="qt" id="anon-l" style="font-weight:600">¿Cómo querés enviar tus respuestas?</div>
         <div class="opts">
           <label class="opt"><input type="radio" id="anon-yes" name="anon" value="1" ${anon ? "checked" : ""}><span class="dot"></span><span><strong>De forma anónima</strong><br><span class="muted" style="font-weight:400">No se guarda tu nombre ni tu email.</span></span></label>
           ${cfg.nameEntry ? `<label class="opt"><input type="radio" id="anon-no" name="anon" value="0" ${anon ? "" : "checked"}><span class="dot"></span><span><strong>Con mi nombre</strong><br><span class="muted" style="font-weight:400">Solo lo ve quien analiza la encuesta.</span></span></label>` : ""}
@@ -421,7 +422,7 @@ function renderSubmit() {
           <label for="name" class="muted" style="font-size:.9rem">Tu nombre</label>
           <input id="name" type="text" autocomplete="name" value="${esc(state.name || "")}" style="font:inherit;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)">
         </div>
-      </fieldset>
+      </div>
       <div class="nav" style="padding:0">
         <button class="btn ghost" id="back" type="button">← Volver</button>
         <span class="spacer"></span>
