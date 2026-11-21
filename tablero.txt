@@ -518,9 +518,9 @@ function construirResumen_(ctx) {
     if (i === 0) {
       caja_(sl, v + "%", cx - 60, 104, 120, 34, { size: 26, bold: true, color: color, align: "center", v: "bottom" });
       caja_(sl, x.nombre, cx - 70, 138, 140, 18, { size: 11, align: "center" });
-      forma_(sl, SlidesApp.ShapeType.FLOWCHART_MERGE, mx - 8, 158, 16, 12, color);
+      caja_(sl, "▼", mx - 12, 152, 24, 22, { size: 14, color: color, align: "center", v: "bottom" });
     } else {
-      forma_(sl, SlidesApp.ShapeType.TRIANGLE, mx - 8, 216, 16, 12, color);
+      caja_(sl, "▲", mx - 12, 210, 24, 22, { size: 14, color: color, align: "center", v: "top" });
       caja_(sl, x.nombre, cx - 70, 230, 140, 18, { size: 11, align: "center" });
       caja_(sl, v + "%", cx - 60, 248, 120, 34, { size: 26, bold: true, color: color, align: "center" });
     }
