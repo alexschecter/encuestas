@@ -240,7 +240,7 @@ function carpetaInformes_() {
 
 function imagenes_() {
   const get = function (n) { try { return UrlFetchApp.fetch(IMG_BASE + n).getBlob(); } catch (e) { return null; } };
-  return { banner: get("banner.jpg"), logo: get("logo.png") };
+  return { banner: get("banner.jpg"), logo: get("logo.png"), firma: get("firma-logo.png") };
 }
 
 // ── Datos ──
@@ -334,8 +334,9 @@ function nueva_(ctx, oscura) {
 }
 function contenido_(ctx, titulo, sub) {
   const sl = nueva_(ctx, false);
-  caja_(sl, titulo, 30, 18, 660, 40, { size: 24, bold: true, color: COL.navy });
-  if (sub) caja_(sl, sub, 30, 54, 660, 22, { size: 12, color: COL.mute });
+  caja_(sl, titulo, 30, 18, 570, 40, { size: 24, bold: true, color: COL.navy });
+  if (sub) caja_(sl, sub, 30, 54, 570, 22, { size: 12, color: COL.mute });
+  if (ctx.imgs.firma) sl.insertImage(ctx.imgs.firma, 614, 16, 76, 30);
   caja_(sl, "Encuesta de " + ctx.d.tituloEncuesta + " · " + ctx.d.clienteNombre, 30, 376, 520, 20, { size: 9, color: COL.mute });
   caja_(sl, String(ctx.pag), 640, 376, 50, 20, { size: 9, color: COL.mute, align: "end" });
   return sl;
@@ -460,11 +461,15 @@ function construirResumen_(ctx) {
     circulo_(sl, 128, y + 19, 12, e[3]);
     caja_(sl, e[1], 144, y, 270, 50, { size: 14, bold: true, v: "middle", color: COL.navy });
     colsE.forEach(function (c) {
-      if (!c.k || estadioDe(general[c.k]) !== e) return;
-      caja_(sl, general[c.k] + "%", c.l, y, c.w, 50, { size: 24, bold: true, color: c.color, v: "middle", align: "center" });
+      if (!c.k) return;
+      if (estadioDe(general[c.k]) !== e) { circulo_(sl, c.l + c.w / 2 - 3, y + 22, 6, COL.line); return; }
+      const p = forma_(sl, SlidesApp.ShapeType.ROUND_RECTANGLE, c.l + 20, y + 8, c.w - 40, 34, e[3]);
+      const tr = p.getText(); tr.setText(general[c.k] + "%");
+      tr.getTextStyle().setFontFamily(FONT).setFontSize(20).setBold(true).setForegroundColor(e[3] === COL.sky || e[3] === COL.sand ? COL.navy : COL.white);
+      tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER); p.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
     });
   });
-  caja_(sl, gs.map(function (x) { return x.nombre + ": " + estadioDe(general[x.k])[1].toLowerCase() + " (" + general[x.k] + "%)"; }).join("   ·   "), 30, 322, 660, 30, { size: 13, color: COL.ink, v: "middle" });
+  caja_(sl, "El resultado de cada grupo aparece en la fila de su estadio.   " + gs.slice().reverse().map(function (x) { return x.nombre + ": " + estadioDe(general[x.k])[1].toLowerCase() + " (" + general[x.k] + "%)"; }).join("   ·   "), 30, 318, 660, 40, { size: 12, color: COL.ink, v: "middle" });
 
   // 4. Panorama por dimensión
   let titulo4 = "Puntaje por dimensión";
@@ -491,11 +496,12 @@ function construirResumen_(ctx) {
     lista.forEach(function (q, i) {
       const x = 30 + (i % 2) * 335, y = 84 + Math.floor(i / 2) * 142;
       tarjeta_(s, x, y, 325, 130);
-      caja_(s, q.titulo, x + 10, y + 8, 305, 80, { size: 13 });
+      caja_(s, q.titulo, x + 10, y + 6, 305, 70, { size: 13 });
       gs.forEach(function (g, gi) {
-        const v = q.por[g.k].puntaje, xx = x + 14 + gi * 150;
-        circulo_(s, xx, y + 102, 11, banda_(v).c);
-        caja_(s, (v === null ? "–" : v) + "  " + g.nombre, xx + 14, y + 94, 136, 26, { size: 11, v: "middle" });
+        const v = q.por[g.k].puntaje, b = banda_(v), xx = x + 12 + gi * 156;
+        caja_(s, g.nombre, xx, y + 78, 150, 18, { size: 10, color: COL.mute });
+        circulo_(s, xx + 4, y + 104, 11, b.c);
+        caja_(s, (v === null ? "–" : v + "/100") + "  ·  " + b.t, xx + 18, y + 96, 136, 26, { size: 12, bold: true, color: COL.navy, v: "middle" });
       });
     });
   };
@@ -562,6 +568,7 @@ function construirResumen_(ctx) {
 function construirDetalle_(ctx) {
   const d = ctx.d, gs = d.grupos;
   let sl = nueva_(ctx, true);
+  if (ctx.imgs.logo) sl.insertImage(ctx.imgs.logo, 600, 18, 96, 40);
   caja_(sl, "Detalle por pregunta", 36, 150, 648, 44, { size: 30, bold: true, color: COL.white });
   caja_(sl, "Para cada pregunta: el % de personas que eligió cada respuesta y el puntaje de 0 a 100 de cada grupo.", 36, 198, 600, 50, { size: 14, color: COL.sky });
 
