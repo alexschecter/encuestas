@@ -19,8 +19,18 @@ const ENCUESTAS = [
   { id: "colab-cultura-direccion", grupo: "cl", tipo: "cultura", publicada: "1FAIpQLScRCq6HrmR7mYeNIZPfxTtYHTfIQFuahVft5OAid53oxrwDlQ", titulo: "Colaboración Interfuncional & Cultura (Dirección)" },
 ];
 
+// Encuestas que se pueden enviar desde el tablero. Para sumar una nueva en el futuro, agregala acá.
+const CATALOGO = [
+  { id: "colaboracion", nombre: "Colaboración Interfuncional", minutos: "5 a 7" },
+  { id: "colaboracion-cultura", nombre: "Colaboración Interfuncional & Cultura", minutos: "10" },
+];
+const ASUNTO_INICIAL = "Encuesta breve sobre colaboración entre áreas";
+const MENSAJE_INICIAL = "Hola,\n\nTe invito a completar una breve encuesta sobre cómo colaboramos entre áreas en {cliente}. Lleva unos {minutos} minutos y podés responderla de forma anónima.\n\n{enlace}\n\n¡Muchas gracias por tu tiempo!";
+
 function doGet() {
-  return HtmlService.createHtmlOutput(PAGINA)
+  const props = PropertiesService.getUserProperties();
+  const config = { catalogo: CATALOGO, asunto: props.getProperty("asunto") || ASUNTO_INICIAL, mensaje: props.getProperty("mensaje") || MENSAJE_INICIAL };
+  return HtmlService.createHtmlOutput(PAGINA.replace("__CONFIG__", JSON.stringify(config).replace(/</g, "\\u003c")))
     .setTitle("Tablero de encuestas")
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
@@ -39,6 +49,24 @@ function buscarFormulario_(enc) {
     } catch (e) {}
   }
   return null;
+}
+
+// Guarda el asunto y el mensaje que escribiste en el tablero, para la próxima vez.
+function guardarMensaje(asunto, mensaje) {
+  PropertiesService.getUserProperties().setProperties({ asunto: String(asunto || ""), mensaje: String(mensaje || "") });
+  return true;
+}
+
+// Envía el mensaje desde tu cuenta de Gmail, un email por persona.
+function enviarEmails(destinatarios, asunto, cuerpo) {
+  const lista = String(destinatarios || "").split(/[\s,;]+/).map(function (x) { return x.trim(); }).filter(Boolean);
+  const validos = lista.filter(function (x) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); });
+  const invalidos = lista.filter(function (x) { return validos.indexOf(x) < 0; });
+  if (!validos.length) throw new Error("No encontré ninguna dirección de email válida.");
+  const cupo = MailApp.getRemainingDailyQuota();
+  if (validos.length > cupo) throw new Error("Hoy podés enviar " + cupo + " emails más desde el tablero (límite diario de Google).");
+  validos.forEach(function (to) { MailApp.sendEmail(to, asunto, cuerpo); });
+  return JSON.stringify({ enviados: validos.length, invalidos: invalidos });
 }
 
 const CAMPO_CLIENTE = "Cliente";
@@ -114,6 +142,7 @@ const W = 720, H = 405;
 // Ejecutar UNA vez desde el editor para dar los permisos nuevos (crea la carpeta "Informes de encuestas").
 function autorizar() {
   const c = carpetaInformes_();
+  Logger.log("Emails que podés enviar hoy: " + MailApp.getRemainingDailyQuota());
   UrlFetchApp.fetch(IMG_BASE + "logo.png");
   Logger.log("Permisos listos. Carpeta: " + c.getUrl());
 }
@@ -529,6 +558,14 @@ th { font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var
 blockquote { margin:0 0 6px; padding:8px 12px; background:var(--bg); border-radius:8px; white-space:pre-wrap; font-size:.92rem; }
 .err { color:var(--low); }
 details.panel summary { cursor:pointer; font-weight:600; font-size:1.05rem; }
+.form { display:grid; grid-template-columns:150px minmax(0,1fr); gap:10px 14px; align-items:start; }
+.form label { padding-top:8px; color:var(--muted); }
+.form input, .form select, .form textarea { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); width:100%; min-width:0; }
+.form textarea { resize:vertical; }
+.row { display:flex; gap:8px; align-items:center; min-width:0; } .row input { flex:1; } .wrapr { flex-wrap:wrap; padding-left:164px; }
+a.btn { text-decoration:none; display:inline-block; }
+.hint { margin:4px 0 0; font-size:.82rem; }
+@media (max-width:640px) { .form { grid-template-columns:1fr; } .form label { padding-top:0; } .wrapr { padding-left:0; } }
 .lk { display:grid; grid-template-columns:minmax(0,220px) minmax(0,1fr) auto; gap:8px; align-items:center; }
 .lk input, #nuevo { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); min-width:0; }
 @media (max-width:640px) { .lk { grid-template-columns:1fr auto; } .lk span { grid-column:1 / -1; } }
@@ -538,10 +575,19 @@ details.panel summary { cursor:pointer; font-weight:600; font-size:1.05rem; }
 </style></head><body><div class="wrap">
 <div class="top"><div><span class="eyebrow">Solo para vos · se actualiza solo</span><h1>Tablero de encuestas</h1></div><span class="sp"></span>
 <span class="muted" id="stamp">Cargando…</span><button class="btn" id="refresh">Actualizar</button></div>
-<details class="panel"><summary>Enviar la encuesta a un cliente</summary>
-<label class="muted" for="nuevo">Nombre del cliente</label><input id="nuevo" placeholder="Por ejemplo: Globex" autocomplete="off">
-<div id="links" style="display:grid;gap:8px"></div>
-<p class="muted" style="margin:0;font-size:.85rem">Mandá el enlace de mandos medios a los mandos medios y el de Dirección a Dirección. Todos los de un mismo grupo reciben el mismo enlace.</p></details>
+<details class="panel" id="enviar"><summary>Enviar encuesta</summary>
+<div class="form">
+  <label for="encSel">Encuesta</label><select id="encSel"></select>
+  <label for="grpSel">Para</label><select id="grpSel"><option value="">Mandos medios</option><option value="-direccion">Dirección (C-level)</option></select>
+  <label for="nuevo">Cliente</label><input id="nuevo" placeholder="Por ejemplo: Globex" autocomplete="off">
+  <label for="enlace">Enlace</label><div class="row"><input id="enlace" readonly placeholder="Escribí el nombre del cliente"><button class="btn" type="button" id="copEnl">Copiar</button></div>
+  <label for="asunto">Asunto</label><input id="asunto">
+  <label for="mensaje">Mensaje</label><div><textarea id="mensaje" rows="8"></textarea><p class="muted hint">Podés usar {cliente}, {enlace} y {minutos}: se completan solos. Tu texto se guarda para la próxima vez.</p></div>
+</div>
+<div class="row wrapr"><button class="btn" type="button" id="copMsg">Copiar mensaje</button><a class="btn" id="wa" target="_blank" rel="noopener">Abrir en WhatsApp</a></div>
+<div class="form"><label for="para">Enviar por email a</label><div><textarea id="para" rows="3" placeholder="ana@empresa.com, juan@empresa.com"></textarea><p class="muted hint">Una o varias direcciones. Cada persona recibe su propio email, enviado desde tu Gmail.</p></div></div>
+<div class="row wrapr"><button class="btn primary" type="button" id="mail">Enviar por email</button><span id="envSt" class="muted" aria-live="polite"></span></div>
+</details>
 <div class="top" style="padding:0"><label class="muted" for="cliente">Cliente</label><select id="cliente" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px"></select>
 <button class="btn primary" id="informe">Generar informe</button></div>
 <div id="inf" class="muted" aria-live="polite"></div>
@@ -625,11 +671,34 @@ function load(){
 document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ TIPO = t.dataset.tipo; document.querySelectorAll(".tab").forEach(function(x){ x.setAttribute("aria-selected", x===t); }); if (DATA) render(); }; });
 document.getElementById("refresh").onclick = load;
 var BASE = "https://alexschecter.github.io/encuestas/#";
-var LINKS = [["Colaboración · Mandos medios","colaboracion"],["Colaboración · Dirección","colaboracion-direccion"],["Colaboración & Cultura · Mandos medios","colaboracion-cultura"],["Colaboración & Cultura · Dirección","colaboracion-cultura-direccion"]];
+var CONFIG = __CONFIG__;
 function slug(t){ return t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
-document.getElementById("nuevo").oninput = function(){ var c = slug(this.value);
-  document.getElementById("links").innerHTML = c ? LINKS.map(function(l){ var u = BASE + c + "/" + l[1]; return '<div class="lk"><span class="muted">'+l[0]+'</span><input readonly value="'+esc(u)+'"><button class="btn" type="button">Copiar</button></div>'; }).join("") : ""; };
-document.getElementById("links").onclick = function(e){ if (e.target.tagName !== "BUTTON") return; var inp = e.target.previousElementSibling; inp.select(); var ok = false; try { ok = document.execCommand("copy"); } catch (x) {} if (!ok && navigator.clipboard) navigator.clipboard.writeText(inp.value); e.target.textContent = "Copiado"; setTimeout(function(){ e.target.textContent = "Copiar"; }, 1500); };
+var $ = function(id){ return document.getElementById(id); };
+$("encSel").innerHTML = CONFIG.catalogo.map(function(e, i){ return '<option value="'+i+'">'+esc(e.nombre)+'</option>'; }).join("");
+$("asunto").value = CONFIG.asunto; $("mensaje").value = CONFIG.mensaje;
+function enlace(){ var c = slug($("nuevo").value); return c ? BASE + c + "/" + CONFIG.catalogo[$("encSel").value].id + $("grpSel").value : ""; }
+function texto(t){ var e = CONFIG.catalogo[$("encSel").value]; return t.split("{cliente}").join($("nuevo").value.trim() || "tu empresa").split("{enlace}").join(enlace()).split("{minutos}").join(e.minutos); }
+function actualizar(){ var u = enlace(); $("enlace").value = u; $("wa").href = "https://wa.me/?text=" + encodeURIComponent(texto($("mensaje").value)); $("wa").style.pointerEvents = u ? "" : "none"; $("wa").style.opacity = u ? "" : ".5"; pend = 0; $("mail").textContent = "Enviar por email"; }
+["encSel","grpSel","nuevo","mensaje","para"].forEach(function(id){ $(id).addEventListener("input", actualizar); $(id).addEventListener("change", actualizar); });
+var guardarT = null;
+["asunto","mensaje"].forEach(function(id){ $(id).addEventListener("input", function(){ clearTimeout(guardarT); guardarT = setTimeout(function(){ google.script.run.guardarMensaje($("asunto").value, $("mensaje").value); }, 1200); }); });
+function copiar(txt, btn){ var ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand("copy"); } catch (x) {} document.body.removeChild(ta); if (!ok && navigator.clipboard) navigator.clipboard.writeText(txt); var o = btn.textContent; btn.textContent = "Copiado"; setTimeout(function(){ btn.textContent = o; }, 1500); }
+$("copEnl").onclick = function(){ if (enlace()) copiar(enlace(), this); };
+$("copMsg").onclick = function(){ if (!enlace()) { $("envSt").textContent = "Escribí el nombre del cliente."; return; } copiar(texto($("mensaje").value), this); };
+var pend = 0;
+$("mail").onclick = function(){
+  var b = this, st = $("envSt");
+  if (!enlace()) { st.textContent = "Escribí el nombre del cliente."; return; }
+  var n = $("para").value.split(/[\\s,;]+/).filter(function(x){ return /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(x); }).length;
+  if (!n) { st.textContent = "Agregá al menos una dirección de email."; return; }
+  if (!pend) { pend = n; b.textContent = "Confirmar envío a " + n + (n === 1 ? " persona" : " personas"); st.textContent = "Revisá el mensaje y tocá de nuevo para enviar."; return; }
+  b.disabled = true; st.textContent = "Enviando…";
+  google.script.run.withSuccessHandler(function(j){ var r = JSON.parse(j); b.disabled = false; pend = 0; b.textContent = "Enviar por email";
+    st.textContent = "Listo: enviado a " + r.enviados + (r.enviados === 1 ? " persona." : " personas.") + (r.invalidos.length ? " No enviado (dirección inválida): " + r.invalidos.join(", ") : ""); $("para").value = ""; })
+    .withFailureHandler(function(e){ b.disabled = false; pend = 0; b.textContent = "Enviar por email"; st.innerHTML = '<span class="err">No se pudo enviar: '+esc(e.message)+'</span>'; })
+    .enviarEmails($("para").value, texto($("asunto").value), texto($("mensaje").value));
+};
+actualizar();
 document.getElementById("informe").onclick = function(){
   var b = this, st = document.getElementById("inf");
   if (!CLIENTE || CLIENTE === "(sin cliente)") { st.innerHTML = '<span class="err">Elegí un cliente en el menú.</span>'; return; }
