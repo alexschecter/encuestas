@@ -381,9 +381,14 @@ function construirResumen_(ctx) {
   // 3b. Estadio de colaboración (puntaje general = promedio de las dimensiones)
   const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero algo fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
   const general = {};
-  gs.forEach(function (x) { general[x.k] = promedio_(d.secciones.map(function (s) { return s.por[x.k]; })); });
+  // Puntos obtenidos en todas las respuestas cerradas sobre el máximo posible, en %.
+  gs.forEach(function (x) {
+    let pts = 0, max = 0;
+    d.preguntas.forEach(function (q) { if (!q.opciones) return; q.por[x.k].conteos.forEach(function (c, j) { pts += c * puntos_(j, q.opciones.length); max += c * 100; }); });
+    general[x.k] = max ? Math.round(pts / max * 100) : null;
+  });
   const estadioDe = function (v) { return ESTADIOS.filter(function (e) { return v >= e[2]; })[0]; };
-  sl = contenido_(ctx, "Estadio de colaboración", "Puntaje general de cada grupo: el promedio de todas las dimensiones.");
+  sl = contenido_(ctx, "Estadio de colaboración", "Puntos obtenidos en todas las respuestas sobre el total posible, en %.");
   const colsE = [{ t: "Escala", l: 30, w: 90 }, { t: "Estadio", l: 120, w: 290 }].concat(GRUPOS.slice().reverse().filter(function (x) { return general[x.k] !== undefined; }).map(function (x, i) { return { t: x.nombre, l: 420 + i * 135, w: 130, k: x.k, color: x.color }; }));
   rect_(sl, 30, 84, 660, 30, COL.navy);
   colsE.forEach(function (c) { caja_(sl, c.t, c.l, 84, c.w, 30, { size: 12, bold: true, color: COL.white, v: "middle", align: c.k ? "center" : "start" }); });
@@ -395,10 +400,10 @@ function construirResumen_(ctx) {
     caja_(sl, e[1], 144, y, 270, 50, { size: 14, bold: true, v: "middle", color: COL.navy });
     colsE.forEach(function (c) {
       if (!c.k || estadioDe(general[c.k]) !== e) return;
-      caja_(sl, String(general[c.k]), c.l, y, c.w, 50, { size: 24, bold: true, color: c.color, v: "middle", align: "center" });
+      caja_(sl, general[c.k] + "%", c.l, y, c.w, 50, { size: 24, bold: true, color: c.color, v: "middle", align: "center" });
     });
   });
-  caja_(sl, gs.map(function (x) { return x.nombre + ": " + estadioDe(general[x.k])[1].toLowerCase() + " (" + general[x.k] + ")"; }).join("   ·   "), 30, 322, 660, 30, { size: 13, color: COL.ink, v: "middle" });
+  caja_(sl, gs.map(function (x) { return x.nombre + ": " + estadioDe(general[x.k])[1].toLowerCase() + " (" + general[x.k] + "%)"; }).join("   ·   "), 30, 322, 660, 30, { size: 13, color: COL.ink, v: "middle" });
 
   // 4. Panorama por dimensión
   let titulo4 = "Puntaje por dimensión";
