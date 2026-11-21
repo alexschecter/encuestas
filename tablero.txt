@@ -1,5 +1,5 @@
 /**
- * Tablero en vivo de las encuestas de colaboración.
+ * Dashboard en vivo de las encuestas de colaboración.
  * Lee las respuestas directamente de tus 4 Google Forms. Solo vos podés verlo.
  *
  * Cómo instalarlo (una sola vez):
@@ -32,9 +32,10 @@ function doGet() {
   let remitentes = [Session.getEffectiveUser().getEmail()];
   try { remitentes = remitentes.concat(GmailApp.getAliases()); } catch (e) {}
   const config = { catalogo: CATALOGO, asunto: props.getProperty("asunto") || ASUNTO_INICIAL, mensaje: props.getProperty("mensaje") || MENSAJE_INICIAL,
-    remitentes: remitentes, desde: props.getProperty("desde") || "", nombre: props.getProperty("nombre") || "", responderA: props.getProperty("responderA") || "" };
+    remitentes: remitentes, desde: props.getProperty("desde") || "", nombre: props.getProperty("nombre") || "", responderA: props.getProperty("responderA") || "",
+    asuntoInicial: ASUNTO_INICIAL, mensajeInicial: MENSAJE_INICIAL, firma: leerFirma_() };
   return HtmlService.createHtmlOutput(PAGINA.replace("__CONFIG__", JSON.stringify(config).replace(/</g, "\\u003c")))
-    .setTitle("Tablero de encuestas")
+    .setTitle("Dashboard")
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
@@ -60,9 +61,49 @@ function guardarMensaje(asunto, mensaje, nombre, responderA) {
   return true;
 }
 
+// Datos de tu firma (web, email, teléfono, LinkedIn). Se escriben en el dashboard y se guardan solo en tu cuenta.
+function leerFirma_() {
+  try { return JSON.parse(PropertiesService.getUserProperties().getProperty("firma") || "{}"); } catch (e) { return {}; }
+}
+function guardarFirma(json) {
+  const f = JSON.parse(json || "{}"), limpio = {};
+  ["web", "email", "tel", "linkedin"].forEach(function (k) { limpio[k] = String(f[k] || "").trim(); });
+  PropertiesService.getUserProperties().setProperty("firma", JSON.stringify(limpio));
+  return true;
+}
+function escHtml_(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+// Arma la versión con formato del email: el texto, el enlace como botón y tu firma con el logo.
+function emailHtml_(cuerpo, f) {
+  const azul = "#4A90D9", gris = "#555555";
+  const parrafos = String(cuerpo).split(/\n\s*\n/).map(function (p) {
+    const t = p.trim();
+    if (/^https?:\/\/\S+$/.test(t)) return '<p style="margin:22px 0"><a href="' + escHtml_(t) + '" style="background:' + azul + ';color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">Responder la encuesta</a></p>' +
+      '<p style="margin:0 0 16px;font-size:12px;color:#888888">Si el botón no funciona, copiá este enlace: <a href="' + escHtml_(t) + '" style="color:' + azul + '">' + escHtml_(t) + '</a></p>';
+    return '<p style="margin:0 0 14px">' + escHtml_(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:' + azul + '">$1</a>').replace(/\n/g, "<br>") + '</p>';
+  }).join("");
+  const fila = function (icono, txt, href) { return txt ? '<tr><td style="padding:1px 6px 1px 0;color:' + azul + ';font-size:12px">' + icono + '</td><td style="padding:1px 0;font-size:12px"><a href="' + escHtml_(href) + '" style="color:' + gris + ';text-decoration:none">' + escHtml_(txt) + '</a></td></tr>' : ""; };
+  const web = f.web ? f.web.replace(/^https?:\/\//, "") : "", li = f.linkedin ? f.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, "").replace(/\/$/, "") : "";
+  const datos = fila("&#127760;", web, "https://" + web) + fila("&#9993;", f.email, "mailto:" + f.email) + fila("&#9742;", f.tel, "tel:" + String(f.tel || "").replace(/[^+\d]/g, "")) + fila("in", li, "https://www.linkedin.com/in/" + li);
+  const firma = '<table cellpadding="0" cellspacing="0" border="0" style="margin-top:26px"><tr>' +
+    '<td style="padding-right:16px;vertical-align:middle"><img src="cid:logo" width="145" alt="Alex Schecter Coaching" style="display:block;border:0"></td>' +
+    (datos ? '<td style="vertical-align:middle;border-left:1px solid #e3e3e3;padding-left:14px"><table cellpadding="0" cellspacing="0" border="0">' + datos + '</table></td>' : "") + '</tr></table>';
+  return '<div style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#222222;max-width:560px">' + parrafos + firma + '</div>';
+}
+function firmaTexto_(f) {
+  const lineas = [f.web, f.email, f.tel, f.linkedin ? "LinkedIn: " + f.linkedin : ""].filter(Boolean);
+  return "\n\n--\nAlex Schecter Coaching" + (lineas.length ? "\n" + lineas.join("\n") : "");
+}
+
+// Te manda una copia del email a vos, para ver cómo queda antes de enviarlo.
+function enviarPrueba(asunto, cuerpo, desde, nombre, responderA, firmaJson) {
+  return enviarEmails(Session.getEffectiveUser().getEmail(), "[Prueba] " + asunto, cuerpo, desde, nombre, responderA, firmaJson);
+}
+
 // Envía el mensaje desde tu cuenta de Gmail, un email por persona.
 // "desde" puede ser tu Gmail o cualquier dirección que tengas configurada en Gmail como "Enviar como" (por ejemplo, la de tu dominio).
-function enviarEmails(destinatarios, asunto, cuerpo, desde, nombre, responderA) {
+function enviarEmails(destinatarios, asunto, cuerpo, desde, nombre, responderA, firmaJson) {
+  if (firmaJson) guardarFirma(firmaJson);
   const lista = String(destinatarios || "").split(/[\s,;]+/).map(function (x) { return x.trim(); }).filter(Boolean);
   const validos = lista.filter(function (x) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); });
   const invalidos = lista.filter(function (x) { return validos.indexOf(x) < 0; });
@@ -74,7 +115,12 @@ function enviarEmails(destinatarios, asunto, cuerpo, desde, nombre, responderA) 
   if (nombre) opciones.name = String(nombre);
   if (responderA && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(responderA)) opciones.replyTo = String(responderA).trim();
   PropertiesService.getUserProperties().setProperty("desde", desde || "");
-  validos.forEach(function (to) { GmailApp.sendEmail(to, asunto, cuerpo, opciones); });
+  const f = leerFirma_();
+  opciones.htmlBody = emailHtml_(cuerpo, f);
+  try { opciones.inlineImages = { logo: UrlFetchApp.fetch(IMG_BASE + "firma-logo.png").getBlob().setName("logo.png") }; }
+  catch (e) { opciones.htmlBody = opciones.htmlBody.replace(/<img [^>]*>/, '<b style="font-size:16px;color:#111A27">Alex Schecter</b><br><span style="font-size:11px;letter-spacing:2px;color:#555555">COACHING</span>'); }
+  const texto = cuerpo + firmaTexto_(f);
+  validos.forEach(function (to) { GmailApp.sendEmail(to, asunto, texto, opciones); });
   return JSON.stringify({ enviados: validos.length, invalidos: invalidos });
 }
 
@@ -612,7 +658,8 @@ details.panel summary { cursor:pointer; font-weight:600; font-size:1.05rem; }
 .form textarea { resize:vertical; }
 .row { display:flex; gap:8px; align-items:center; min-width:0; } .row input { flex:1; } .wrapr { flex-wrap:wrap; padding-left:164px; }
 a.btn { text-decoration:none; display:inline-block; }
-.hint { margin:4px 0 0; font-size:.82rem; }
+.hint { margin:4px 0 0; font-size:.82rem; } .hint a { color:var(--accent); }
+.firma { display:grid; grid-template-columns:1fr 1fr; gap:8px; } @media (max-width:640px) { .firma { grid-template-columns:1fr; } }
 @media (max-width:640px) { .form { grid-template-columns:1fr; } .form label { padding-top:0; } .wrapr { padding-left:0; } }
 .lk { display:grid; grid-template-columns:minmax(0,220px) minmax(0,1fr) auto; gap:8px; align-items:center; }
 .lk input, #nuevo { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); min-width:0; }
@@ -621,7 +668,7 @@ a.btn { text-decoration:none; display:inline-block; }
 .btn:disabled { opacity:.6; cursor:wait; }
 #inf a { color:var(--accent); font-weight:600; }
 </style></head><body><div class="wrap">
-<div class="top"><div><span class="eyebrow">Solo para vos · se actualiza solo</span><h1>Tablero de encuestas</h1></div><span class="sp"></span>
+<div class="top"><div><span class="eyebrow">Solo para vos · se actualiza solo</span><h1>Dashboard</h1></div><span class="sp"></span>
 <span class="muted" id="stamp">Cargando…</span><button class="btn" id="refresh">Actualizar</button></div>
 <details class="panel" id="enviar"><summary>Enviar encuesta</summary>
 <div class="form">
@@ -630,13 +677,14 @@ a.btn { text-decoration:none; display:inline-block; }
   <label for="nuevo">Cliente</label><input id="nuevo" placeholder="Por ejemplo: Globex" autocomplete="off">
   <label for="enlace">Enlace</label><div class="row"><input id="enlace" readonly placeholder="Escribí el nombre del cliente"><button class="btn" type="button" id="copEnl">Copiar</button></div>
   <label for="asunto">Asunto</label><input id="asunto">
-  <label for="mensaje">Mensaje</label><div><textarea id="mensaje" rows="8"></textarea><p class="muted hint">Podés usar {cliente}, {enlace} y {minutos}: se completan solos. Tu texto se guarda para la próxima vez.</p></div>
+  <label for="mensaje">Mensaje</label><div><textarea id="mensaje" rows="8"></textarea><p class="muted hint">Podés usar {cliente}, {enlace} y {minutos}: se completan solos. Tu texto se guarda para la próxima vez. <a href="#" id="reset">Volver al mensaje original</a></p></div>
 </div>
 <div class="row wrapr"><button class="btn" type="button" id="copMsg">Copiar mensaje</button><a class="btn" id="wa" target="_blank" rel="noopener">Abrir en WhatsApp</a></div>
 <div class="form"><label for="nombre">Tu nombre</label><input id="nombre" placeholder="Como lo ven quienes reciben el email">
 <label for="responderA">Las respuestas llegan a</label><div><input id="responderA" type="email" placeholder="tu@dominio.com"><p class="muted hint">El email sale de tu Gmail con tu nombre; si alguien responde, la respuesta llega a esta dirección.</p></div>
+<label for="fWeb">Tu firma</label><div><div class="firma"><input id="fWeb" placeholder="Web: www.tudominio.com"><input id="fEmail" type="email" placeholder="Email"><input id="fTel" placeholder="Teléfono"><input id="fLi" placeholder="LinkedIn: usuario o enlace"></div><p class="muted hint">Va debajo del mensaje, al lado de tu logo. Se guarda solo en tu cuenta.</p></div>
 <label for="desde" id="desdeL">Enviar desde</label><select id="desde"></select><label for="para">Enviar por email a</label><div><textarea id="para" rows="3" placeholder="ana@empresa.com, juan@empresa.com"></textarea><p class="muted hint">Una o varias direcciones. Cada persona recibe su propio email.</p></div></div>
-<div class="row wrapr"><button class="btn primary" type="button" id="mail">Enviar por email</button><span id="envSt" class="muted" aria-live="polite"></span></div>
+<div class="row wrapr"><button class="btn primary" type="button" id="mail">Enviar por email</button><button class="btn" type="button" id="prueba">Enviarme una prueba</button><span id="envSt" class="muted" aria-live="polite"></span></div>
 </details>
 <div class="top" style="padding:0"><label class="muted" for="cliente">Cliente</label><select id="cliente" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px"></select>
 <button class="btn primary" id="informe">Generar informe</button></div>
@@ -734,6 +782,12 @@ function texto(t){ var e = CONFIG.catalogo[$("encSel").value]; return t.split("{
 function actualizar(){ var u = enlace(); $("enlace").value = u; $("wa").href = "https://wa.me/?text=" + encodeURIComponent(texto($("mensaje").value)); $("wa").style.pointerEvents = u ? "" : "none"; $("wa").style.opacity = u ? "" : ".5"; pend = 0; $("mail").textContent = "Enviar por email"; }
 ["encSel","grpSel","nuevo","mensaje","para"].forEach(function(id){ $(id).addEventListener("input", actualizar); $(id).addEventListener("change", actualizar); });
 var guardarT = null;
+var FIRMA = { fWeb:"web", fEmail:"email", fTel:"tel", fLi:"linkedin" }, firmaT = null;
+Object.keys(FIRMA).forEach(function(id){ $(id).value = (CONFIG.firma || {})[FIRMA[id]] || ""; $(id).addEventListener("input", function(){ clearTimeout(firmaT); firmaT = setTimeout(guardarFirmaYa, 1200); }); });
+function firmaJson(){ var f = {}; Object.keys(FIRMA).forEach(function(id){ f[FIRMA[id]] = $(id).value; }); return JSON.stringify(f); }
+function guardarFirmaYa(){ clearTimeout(firmaT); google.script.run.guardarFirma(firmaJson()); }
+function guardarMsgYa(){ clearTimeout(guardarT); google.script.run.guardarMensaje($("asunto").value, $("mensaje").value, $("nombre").value, $("responderA").value); }
+$("reset").onclick = function(e){ e.preventDefault(); $("asunto").value = CONFIG.asuntoInicial; $("mensaje").value = CONFIG.mensajeInicial; guardarMsgYa(); actualizar(); $("envSt").textContent = "Listo: volviste al mensaje original."; };
 ["asunto","mensaje","nombre","responderA"].forEach(function(id){ $(id).addEventListener("input", function(){ clearTimeout(guardarT); guardarT = setTimeout(function(){ google.script.run.guardarMensaje($("asunto").value, $("mensaje").value, $("nombre").value, $("responderA").value); }, 1200); }); });
 function copiar(txt, btn){ var ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand("copy"); } catch (x) {} document.body.removeChild(ta); if (!ok && navigator.clipboard) navigator.clipboard.writeText(txt); var o = btn.textContent; btn.textContent = "Copiado"; setTimeout(function(){ btn.textContent = o; }, 1500); }
 $("copEnl").onclick = function(){ if (enlace()) copiar(enlace(), this); };
@@ -749,7 +803,15 @@ $("mail").onclick = function(){
   google.script.run.withSuccessHandler(function(j){ var r = JSON.parse(j); b.disabled = false; pend = 0; b.textContent = "Enviar por email";
     st.textContent = "Listo: enviado a " + r.enviados + (r.enviados === 1 ? " persona." : " personas.") + (r.invalidos.length ? " No enviado (dirección inválida): " + r.invalidos.join(", ") : ""); $("para").value = ""; })
     .withFailureHandler(function(e){ b.disabled = false; pend = 0; b.textContent = "Enviar por email"; st.innerHTML = '<span class="err">No se pudo enviar: '+esc(e.message)+'</span>'; })
-    .enviarEmails($("para").value, texto($("asunto").value), texto($("mensaje").value), $("desde").value, $("nombre").value.trim(), $("responderA").value.trim());
+    .enviarEmails($("para").value, texto($("asunto").value), texto($("mensaje").value), $("desde").value, $("nombre").value.trim(), $("responderA").value.trim(), firmaJson());
+};
+$("prueba").onclick = function(){
+  var b = this, st = $("envSt");
+  if (!enlace()) { st.textContent = "Escribí el nombre del cliente."; return; }
+  b.disabled = true; clearTimeout(firmaT); st.textContent = "Enviando la prueba a tu Gmail…";
+  google.script.run.withSuccessHandler(function(){ b.disabled = false; st.textContent = "Listo: mirá tu bandeja de entrada para ver cómo queda."; })
+    .withFailureHandler(function(e){ b.disabled = false; st.innerHTML = '<span class="err">No se pudo enviar: '+esc(e.message)+'</span>'; })
+    .enviarPrueba(texto($("asunto").value), texto($("mensaje").value), $("desde").value, $("nombre").value.trim(), $("responderA").value.trim(), firmaJson());
 };
 actualizar();
 document.getElementById("informe").onclick = function(){
