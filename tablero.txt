@@ -402,22 +402,19 @@ function masElegida_(q, k) {
 }
 
 // Barras horizontales por grupo (una fila por etiqueta)
-function barras_(sl, d, filas, l, t, w, h, anchoEtiqueta) {
-  const gs = d.grupos;
-  const ley = caja_(sl, gs.map(function (x) { return "■ " + x.nombre; }).join("     "), l + anchoEtiqueta, t - 4, w - anchoEtiqueta, 18, { size: 10, color: COL.ink }).getText();
-  let pos = 0;
-  gs.forEach(function (x) { ley.getRange(pos, pos + 1).getTextStyle().setForegroundColor(x.color); pos += x.nombre.length + 2 + 5; });
-  const top = t + 18, alto = (h - 18) / filas.length, barH = Math.min(12, (alto - 10) / gs.length), maxW = w - anchoEtiqueta - 92;
+function barras_(sl, d, filas, l, t, w, h) {
+  // Cada fila: el nombre de la dimensión (y qué mide) arriba, y debajo una barra por grupo con su nombre a la izquierda.
+  const gs = d.grupos, anchoG = 84;
+  const alto = h / filas.length, barH = 11, maxW = w - anchoG - 96;
   filas.forEach(function (f, i) {
-    const y = top + i * alto;
-    const et = caja_(sl, f.etiqueta + (f.desc ? "\n" + f.desc : ""), l, y, anchoEtiqueta - 8, alto, { size: 10.5, color: COL.ink, align: "end", v: "middle" });
-    if (f.desc) { const tr = et.getText(); tr.getRange(0, f.etiqueta.length).getTextStyle().setBold(true); tr.getRange(f.etiqueta.length + 1, f.etiqueta.length + 1 + f.desc.length).getTextStyle().setFontSize(8.5).setForegroundColor(COL.mute); }
-    const bloque = barH * gs.length + 2 * (gs.length - 1), y0 = y + (alto - bloque) / 2;
+    const y = t + i * alto;
+    const tit = caja_(sl, f.etiqueta + (f.desc ? "  ·  " + f.desc : ""), l - 4, y, w, 18, { size: 11, bold: true, color: COL.navy, v: "middle" }).getText();
+    if (f.desc) tit.getRange(f.etiqueta.length, f.etiqueta.length + 5 + f.desc.length).getTextStyle().setBold(false).setFontSize(9.5).setForegroundColor(COL.mute);
     gs.forEach(function (x, gi) {
-      const v = f.valores[x.k];
-      const yy = y0 + gi * (barH + 2);
-      if (v !== null && v > 0) rect_(sl, l + anchoEtiqueta, yy, Math.max(2, maxW * v / 100), barH, x.color);
-      const et = caja_(sl, v === null ? "–" : v + "  " + banda_(v).t, l + anchoEtiqueta + Math.max(2, maxW * (v || 0) / 100) + 2, yy - 4, 92, barH + 8, { size: 9.5, color: COL.ink, v: "middle" }).getText();
+      const v = f.valores[x.k], yy = y + 19 + gi * (barH + 3);
+      caja_(sl, x.nombre, l - 4, yy - 4, anchoG, barH + 8, { size: 9, color: COL.mute, v: "middle" });
+      if (v !== null && v > 0) rect_(sl, l + anchoG, yy, Math.max(2, maxW * v / 100), barH, x.color);
+      const et = caja_(sl, v === null ? "–" : v + "  " + banda_(v).t, l + anchoG + Math.max(2, maxW * (v || 0) / 100) + 2, yy - 4, 96, barH + 8, { size: 9.5, color: COL.ink, v: "middle" }).getText();
       if (v !== null) et.getRange(0, String(v).length).getTextStyle().setBold(true);
     });
   });
@@ -537,7 +534,7 @@ function construirResumen_(ctx) {
     titulo4 = mmMas > d.secciones.length / 2 ? "Los mandos medios ven la colaboración más positiva" : mmMas < d.secciones.length / 2 ? "Dirección ve la colaboración más positiva" : "Puntaje por dimensión";
   }
   sl = contenido_(ctx, titulo4, "Puntaje de 0 a 100 de cada dimensión: el promedio de sus preguntas.");
-  barras_(sl, d, d.secciones.map(function (s) { return { etiqueta: s.titulo, desc: DESC_DIMENSION[s.titulo] || (s.qs.length + (s.qs.length === 1 ? " pregunta" : " preguntas")), valores: s.por }; }), 30, 86, 480, 280, 240);
+  barras_(sl, d, d.secciones.map(function (s) { return { etiqueta: s.titulo, desc: DESC_DIMENSION[s.titulo] || (s.qs.length + (s.qs.length === 1 ? " pregunta" : " preguntas")), valores: s.por }; }), 34, 80, 476, 290);
   tarjeta_(sl, 520, 80, 170, 285);
   let lado = ["Lo que se ve", "La dimensión mejor valorada es " + top.titulo + " y la más baja, " + low.titulo + "."];
   if (dos) {
