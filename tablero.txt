@@ -274,7 +274,7 @@ function bloquePregunta_(ctx, sl, q, y) {
   caja_(sl, q.titulo, 30, y, 660, 34, { size: 13, bold: true, color: COL.navy });
   gs.forEach(function (g, gi) {
     const x0 = 30 + gi * 335, c = q.por[g.k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0);
-    caja_(sl, g.nombre + " · " + n + (n === 1 ? " respuesta" : " respuestas"), x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
+    caja_(sl, g.nombre, x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
     const img = torta_(q, g.k, cols);
     if (img) sl.insertImage(img, x0, y + 56, 90, 90);
     else apilada_(sl, q, g.k, x0, y + 90, 90, 20);
@@ -304,7 +304,7 @@ function puntaje_(conteos) {
 }
 function promedio_(xs) { xs = xs.filter(function (x) { return x !== null && x !== undefined; }); return xs.length ? Math.round(xs.reduce(function (a, b) { return a + b; }, 0) / xs.length) : null; }
 // Escala única para todo el informe: [rango, estadio, mínimo, color]
-const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero algo fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
+const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
 function estadio_(v) { return ESTADIOS.filter(function (e) { return v >= e[2]; })[0]; }
 // Para preguntas y dimensiones se usan nombres simples con los mismos rangos y colores.
 const NIVELES = ["Fortaleza", "Funcional", "A mejorar", "Crítico"];
@@ -503,29 +503,25 @@ function construirResumen_(ctx) {
   const estadioDe = estadio_;
   sl = contenido_(ctx, "Estadio de colaboración", "Puntos obtenidos en todas las respuestas sobre el total posible, en %.");
   // Una sola regla de 0 a 100 con los cuatro estadios; Dirección arriba y Mandos medios abajo.
-  const BX = 50, BW = 620, BY = 176, BH = 34;
+  const BX = 50, BW = 620, BY = 170, BH = 74;
   ESTADIOS.slice().reverse().forEach(function (e, i) {
     const oscuro = e[3] === COL.coral || e[3] === COL.blue;
     const z = rect_(sl, BX + i * BW / 4, BY, BW / 4, BH, e[3]);
-    const tr = z.getText(); tr.setText(e[0]);
-    tr.getTextStyle().setFontFamily(FONT).setFontSize(11).setBold(true).setForegroundColor(oscuro ? COL.white : COL.navy);
+    const tr = z.getText(); tr.setText(e[0] + "\n" + e[1]);
+    tr.getTextStyle().setFontFamily(FONT).setFontSize(12).setBold(true).setForegroundColor(oscuro ? COL.white : COL.navy);
+    tr.getRange(0, e[0].length).getTextStyle().setFontSize(10).setBold(false);
     tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER); z.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
-    caja_(sl, e[1], BX + i * BW / 4, 300, BW / 4, 40, { size: 12, bold: true, color: COL.navy, align: "center" });
   });
   GRUPOS.slice().reverse().filter(function (x) { return general[x.k] !== undefined && general[x.k] !== null; }).forEach(function (x, i) {
     const v = general[x.k], cx = Math.max(BX + 50, Math.min(BX + BW - 50, BX + v / 100 * BW)), mx = BX + v / 100 * BW;
     const color = x.k === "cl" ? COL.navy : "#2F6DB5";
-    if (i === 0) {
-      caja_(sl, v + "%", cx - 60, 104, 120, 34, { size: 26, bold: true, color: color, align: "center", v: "bottom" });
-      caja_(sl, x.nombre, cx - 70, 138, 140, 18, { size: 11, align: "center" });
-      caja_(sl, "▼", mx - 12, 152, 24, 22, { size: 14, color: color, align: "center", v: "bottom" });
-    } else {
-      caja_(sl, "▲", mx - 12, 210, 24, 22, { size: 14, color: color, align: "center", v: "top" });
-      caja_(sl, x.nombre, cx - 70, 230, 140, 18, { size: 11, align: "center" });
-      caja_(sl, v + "%", cx - 60, 248, 120, 34, { size: 26, bold: true, color: color, align: "center" });
-    }
+    // Pila simétrica a cada lado de la barra: flecha (16) · nombre (20) · % (30), separados por 2.
+    const arriba = i === 0, y0 = arriba ? BY - 4 : BY + BH + 4, dir = arriba ? -1 : 1;
+    const fila = function (desde, alto) { return arriba ? y0 - desde - alto : y0 + desde; };
+    caja_(sl, arriba ? "▼" : "▲", mx - 12, fila(0, 16), 24, 16, { size: 13, color: color, align: "center", v: "middle" });
+    caja_(sl, x.nombre, cx - 80, fila(18, 20), 160, 20, { size: 15, bold: true, color: color, align: "center", v: "middle" });
+    caja_(sl, v + "%", cx - 80, fila(40, 30), 160, 30, { size: 26, bold: true, color: color, align: "center", v: "middle" });
   });
-  caja_(sl, gs.slice().reverse().map(function (x) { return x.nombre + ": " + estadioDe(general[x.k])[1].toLowerCase() + " (" + general[x.k] + "%)"; }).join("   ·   "), 30, 340, 660, 26, { size: 12, color: COL.mute, align: "center", v: "middle" });
 
   // 4. Panorama por dimensión
   let titulo4 = "Puntaje por dimensión";
