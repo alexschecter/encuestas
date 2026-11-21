@@ -205,7 +205,10 @@ function puntaje_(conteos) {
   return Math.round(conteos.reduce(function (a, c, j) { return a + c * puntos_(j, conteos.length); }, 0) / n);
 }
 function promedio_(xs) { xs = xs.filter(function (x) { return x !== null && x !== undefined; }); return xs.length ? Math.round(xs.reduce(function (a, b) { return a + b; }, 0) / xs.length) : null; }
-function banda_(s) { return s === null ? { t: "Sin datos", c: COL.line } : s >= 75 ? { t: "Fortaleza", c: COL.blue } : s >= 50 ? { t: "En desarrollo", c: COL.sand } : { t: "Prioridad", c: COL.coral }; }
+// Escala única para todo el informe: [rango, estadio, mínimo, color]
+const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero algo fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
+function estadio_(v) { return ESTADIOS.filter(function (e) { return v >= e[2]; })[0]; }
+function banda_(s) { if (s === null || s === undefined) return { t: "Sin datos", c: COL.line }; const e = estadio_(s); return { t: e[1], c: e[3] }; }
 
 function prepararDatos_(raw, cliente, tipo) {
   const sets = raw.filter(function (s) { return s.tipo === tipo && !s.error; });
@@ -382,14 +385,13 @@ function construirResumen_(ctx) {
   caja_(sl, "Respuestas anónimas, salvo quien eligió dar su nombre. Con pocos participantes, cada respuesta pesa mucho: los resultados muestran tendencias para conversar, no conclusiones definitivas.", 30, 190, 300, 120, { size: 12, color: COL.mute });
   tarjeta_(sl, 360, 80, 330, 280);
   caja_(sl, "Puntaje de 0 a 100", 374, 92, 300, 24, { size: 15, bold: true, color: COL.navy });
-  caja_(sl, "Cada respuesta se convierte en un puntaje: la opción más favorable vale 100 y la menos favorable 0. El puntaje de cada dimensión es el promedio de sus preguntas. El informe completo muestra además el % de personas que eligió cada respuesta.", 374, 118, 300, 130, { size: 12 });
-  [["Fortaleza", "75 a 100", COL.blue], ["En desarrollo", "50 a 74", COL.sand], ["Prioridad", "0 a 49", COL.coral]].forEach(function (b, i) {
-    circulo_(sl, 380, 268 + i * 28, 14, b[2]);
-    caja_(sl, b[0] + "   " + b[1], 400, 262 + i * 28, 260, 24, { size: 12, v: "middle" });
+  caja_(sl, "Cada respuesta suma puntos: la opción más favorable vale 100 y la menos favorable 0. El puntaje es el total de puntos obtenidos sobre el máximo posible. Los colores muestran el estadio:", 374, 118, 300, 100, { size: 12 });
+  ESTADIOS.forEach(function (e, i) {
+    circulo_(sl, 380, 236 + i * 28, 14, e[3]);
+    caja_(sl, e[0] + "   " + e[1], 400, 230 + i * 28, 280, 24, { size: 12, v: "middle" });
   });
 
   // 3b. Estadio de colaboración (puntaje general = promedio de las dimensiones)
-  const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero algo fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
   const general = {};
   // Puntos obtenidos en todas las respuestas cerradas sobre el máximo posible, en %.
   gs.forEach(function (x) {
@@ -397,7 +399,7 @@ function construirResumen_(ctx) {
     d.preguntas.forEach(function (q) { if (!q.opciones) return; q.por[x.k].conteos.forEach(function (c, j) { pts += c * puntos_(j, q.opciones.length); max += c * 100; }); });
     general[x.k] = max ? Math.round(pts / max * 100) : null;
   });
-  const estadioDe = function (v) { return ESTADIOS.filter(function (e) { return v >= e[2]; })[0]; };
+  const estadioDe = estadio_;
   sl = contenido_(ctx, "Estadio de colaboración", "Puntos obtenidos en todas las respuestas sobre el total posible, en %.");
   const colsE = [{ t: "Escala", l: 30, w: 90 }, { t: "Estadio", l: 120, w: 290 }].concat(GRUPOS.slice().reverse().filter(function (x) { return general[x.k] !== undefined; }).map(function (x, i) { return { t: x.nombre, l: 420 + i * 135, w: 130, k: x.k, color: x.color }; }));
   rect_(sl, 30, 84, 660, 30, COL.navy);
@@ -462,6 +464,34 @@ function construirResumen_(ctx) {
       const b = brechas[0];
       caja_(sl, "Para conversar", 530, 90, 150, 22, { size: 14, bold: true, color: COL.navy });
       caja_(sl, "En \"" + b.titulo + "\", la respuesta más elegida por mandos medios fue \"" + masElegida_(b, "mm") + "\" y por Dirección \"" + masElegida_(b, "cl") + "\".\n\n¿Qué ve cada nivel que el otro no ve?", 530, 114, 150, 240, { size: 11.5 });
+    }
+  }
+
+  // 7b. Palabras más repetidas (pregunta abierta de "palabras", si hay respuestas)
+  const qPal = d.preguntas.filter(function (q) { return !q.opciones && /palabras/i.test(q.titulo); })[0];
+  if (qPal) {
+    const NO = " a al algo como con de del e el en es esta este hay la las lo los mas más me mi muy no o para pero por que se sin su sus un una uno y ya ";
+    const cuenta = {};
+    gs.forEach(function (g) { (qPal.por[g.k].textos || []).forEach(function (t) {
+      String(t).toLowerCase().split(/[^a-záéíóúüñ]+/).forEach(function (w) { if (w.length >= 3 && NO.indexOf(" " + w + " ") < 0) cuenta[w] = (cuenta[w] || 0) + 1; });
+    }); });
+    const top = Object.keys(cuenta).sort(function (a, b) { return cuenta[b] - cuenta[a] || a.localeCompare(b); }).slice(0, 18);
+    if (top.length) {
+      sl = contenido_(ctx, "La cultura en palabras", qPal.titulo);
+      const max = cuenta[top[0]];
+      let x = 30, y = 92;
+      top.forEach(function (w, i) {
+        const etiqueta = w + (cuenta[w] > 1 ? " · " + cuenta[w] : "");
+        const size = Math.round(13 + (cuenta[w] / max) * 15), ww = Math.round(etiqueta.length * size * 0.6 + 30), hh = size + 20;
+        if (x + ww > 690) { x = 30; y += 54; }
+        if (y + hh > 365) return;
+        const chip = forma_(sl, SlidesApp.ShapeType.ROUND_RECTANGLE, x, y + (34 - hh) / 2 + 10, ww, hh, i < 3 ? COL.blue : COL.mist);
+        const tr = chip.getText(); tr.setText(etiqueta);
+        tr.getTextStyle().setFontFamily(FONT).setFontSize(size).setBold(i < 3).setForegroundColor(i < 3 ? COL.white : COL.navy);
+        tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
+        chip.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
+        x += ww + 10;
+      });
     }
   }
 
@@ -558,7 +588,7 @@ table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums;
 th, td { text-align:left; padding:8px 6px; border-top:1px solid var(--line); }
 th { font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-top:0; }
 .band { padding:2px 8px; border-radius:999px; font-size:.78rem; font-weight:600; }
-.band.good { background:#dcf2e7; color:var(--good); } .band.mid { background:#fbefd6; color:var(--mid); } .band.low { background:#fde4d6; color:var(--low); }
+.band.e1 { background:#dbe9f8; color:#1f5fa8; } .band.e2 { background:#eaf2fb; color:#3b6fa6; } .band.e3 { background:#f5ebe3; color:#8a5a3b; } .band.e4 { background:#fbe3dc; color:#a8432a; }
 .q { display:grid; gap:12px; padding:16px 0; border-top:1px solid var(--line); }
 .q:first-of-type { border-top:0; }
 .q h3 { margin:0; font-size:1rem; font-weight:500; }
@@ -634,7 +664,7 @@ var COLORS = ["var(--c0)","var(--c1)","var(--c2)","var(--c3)"], COLORS3 = ["var(
 var GROUP = { mm: "Mandos medios", cl: "Dirección (C-level)" };
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 function pts(j,n){ return (n-1-j)/(n-1)*100; }
-function band(s){ return s>=75?["good","Fortaleza"]:s>=50?["mid","En desarrollo"]:["low","Prioridad"]; }
+function band(s){ return s>=76?["e1","Conectado y estratégico"]:s>=51?["e2","Funcional pero algo fragmentado"]:s>=26?["e3","Transaccional y a veces tenso"]:["e4","Aislado e ineficiente"]; }
 function pie(counts, colors){
   var tot = counts.reduce(function(a,b){return a+b;},0), a = -Math.PI/2, out = "", r = 52, cx = 60, cy = 60;
   if (!tot) return '<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="var(--line)"/><text x="60" y="65" text-anchor="middle" font-size="12" fill="var(--muted)">Sin datos</text></svg>';
