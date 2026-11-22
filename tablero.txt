@@ -1123,12 +1123,16 @@ function buildView(){
     return { id: s.id, grupo: s.grupo, tipo: s.tipo, titulo: s.titulo, n: c.n, ultima: c.ultima,
       preguntas: s.preguntas.map(function(p, i){ return { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, puntajes: p.puntajes, multi: p.multi, perfil: p.perfil, conteos: c.conteos[i], textos: c.textos[i] }; }) };
   });
-  var tipos = [], nombres = {};
-  RAW.forEach(function(s){ if (tipos.indexOf(s.tipo) < 0) { tipos.push(s.tipo); nombres[s.tipo] = s.titulo; } });
-  if (tipos.indexOf(TIPO) < 0) TIPO = tipos[0];
-  $("tabs").innerHTML = tipos.map(function(t){ return '<button class="tab" role="tab" data-tipo="'+esc(t)+'" aria-selected="'+(t===TIPO)+'">'+esc(nombres[t])+'</button>'; }).join("");
-  document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ TIPO = t.dataset.tipo; document.querySelectorAll(".tab").forEach(function(x){ x.setAttribute("aria-selected", x===t); }); if (DATA) render(); }; });
+  var tipos = [], nombres = {}, cuantos = {};
+  RAW.forEach(function(s){ if (tipos.indexOf(s.tipo) < 0) { tipos.push(s.tipo); nombres[s.tipo] = s.titulo; cuantos[s.tipo] = 0; } });
+  DATA.forEach(function(s){ if (!s.error) cuantos[s.tipo] += s.n || 0; });
+  // Si la pestaña elegida no tiene respuestas de este cliente, pasar a la primera que sí tenga.
+  if (tipos.indexOf(TIPO) < 0 || (!cuantos[TIPO] && tipos.some(function(t){ return cuantos[t]; }))) TIPO = tipos.filter(function(t){ return cuantos[t]; })[0] || tipos[0];
+  $("tabs").innerHTML = tipos.map(function(t){ return '<button class="tab" role="tab" data-tipo="'+esc(t)+'" aria-selected="'+(t===TIPO)+'"'+(cuantos[t]?'':' style="opacity:.55"')+'>'+esc(nombres[t])+' ('+cuantos[t]+')</button>'; }).join("");
+  document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ TIPO = t.dataset.tipo; document.querySelectorAll(".tab").forEach(function(x){ x.setAttribute("aria-selected", x===t); }); botonInforme(); if (DATA) render(); }; });
+  botonInforme();
 }
+function botonInforme(){ var s = RAW && RAW.filter(function(x){ return x.tipo === TIPO; })[0]; $("informe").textContent = "Generar informe" + (s ? ": " + s.titulo : ""); }
 var COLORS = ["var(--c0)","var(--c1)","var(--c2)","var(--c3)"], COLORS3 = ["var(--c0)","var(--c1)","var(--c3)"], COLORS5 = ["var(--c0)","var(--c1)","#d9d4c7","var(--c2)","var(--c3)"], COLORSX = ["#2453c9","#1d8a5a","#b7791f","#c8452a","#7c3aed","#0e7490","#be185d","#4d7c0f","#8fb0ef","#f1a58f","#94a3b8","#a16207"];
 var GROUP = { mm: "Mandos medios", cl: "Dirección (C-level)" };
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
