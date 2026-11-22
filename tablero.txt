@@ -21,15 +21,15 @@ const ENCUESTAS = [
 
 // Encuestas que se pueden enviar desde el tablero. Para sumar una nueva en el futuro, agregala acá.
 const CATALOGO = [
-  { id: "colaboracion", tema: "cómo colaboramos entre áreas", nombre: "Colaboración Interfuncional", minutos: "10" },
-  { id: "colaboracion-cultura", tema: "cómo colaboramos entre áreas y la cultura", nombre: "Colaboración Interfuncional & Cultura", minutos: "10" },
-  { id: "cultura", tema: "la cultura", nombre: "Cultura", minutos: "10" },
-  { id: "liderazgo", tema: "cómo funciona el equipo de liderazgo", nombre: "Efectividad del equipo de liderazgo", minutos: "10" },
-  { id: "alineacion", tema: "la estrategia y las prioridades", nombre: "Alineación estratégica y prioridades", minutos: "10" },
-  { id: "feedback", tema: "el feedback y las conversaciones difíciles", nombre: "Feedback y conversaciones difíciles", minutos: "10" },
-  { id: "delegacion", tema: "la delegación y el ownership", nombre: "Delegación y ownership", minutos: "10" },
-  { id: "desarrollo-mandos-medios", tema: "tus necesidades de desarrollo como líder", nombre: "Necesidades de desarrollo · Mandos medios", minutos: "10", grupo: "mm" },
-  { id: "desarrollo-direccion", tema: "tus necesidades de desarrollo como líder", nombre: "Necesidades de desarrollo · Dirección", minutos: "10", grupo: "cl" },
+  { id: "colaboracion", tema: "Colaboración Interfuncional", nombre: "Colaboración Interfuncional", minutos: "10" },
+  { id: "colaboracion-cultura", tema: "Colaboración Interfuncional y Cultura", nombre: "Colaboración Interfuncional & Cultura", minutos: "10" },
+  { id: "cultura", tema: "Cultura", nombre: "Cultura", minutos: "10" },
+  { id: "liderazgo", tema: "Efectividad del Equipo de Liderazgo", nombre: "Efectividad del equipo de liderazgo", minutos: "10" },
+  { id: "alineacion", tema: "Alineación Estratégica y Prioridades", nombre: "Alineación estratégica y prioridades", minutos: "10" },
+  { id: "feedback", tema: "Feedback y Conversaciones Difíciles", nombre: "Feedback y conversaciones difíciles", minutos: "10" },
+  { id: "delegacion", tema: "Delegación y Ownership", nombre: "Delegación y ownership", minutos: "10" },
+  { id: "desarrollo-mandos-medios", tema: "Necesidades de Desarrollo como Líder", nombre: "Necesidades de desarrollo · Mandos medios", minutos: "10", grupo: "mm" },
+  { id: "desarrollo-direccion", tema: "Necesidades de Desarrollo como Líder", nombre: "Necesidades de desarrollo · Dirección", minutos: "10", grupo: "cl" },
 ];
 const ASUNTO_INICIAL = "Encuesta breve sobre {tema} en {cliente}";
 const MENSAJE_INICIAL = "Hola,\n\nTe invito a completar una breve encuesta sobre {tema} en {cliente}. Lleva unos {minutos} minutos y podés responderla de forma anónima.\n\n{enlace}\n\n¡Muchas gracias por tu tiempo!";
@@ -40,7 +40,7 @@ function doGet() {
   try { remitentes = remitentes.concat(GmailApp.getAliases()); } catch (e) {}
   const fijo = function (t) { return t && t.replace(/https:\/\/alexschecter\.github\.io\/encuestas\/#[^\s]*/g, "{enlace}").split("Encuesta breve sobre colaboración entre áreas").join("Encuesta breve sobre {tema}").split("encuesta sobre cómo colaboramos entre áreas en").join("encuesta sobre {tema} en"); };
   const asuntoGuardado = fijo(props.getProperty("asunto"));
-  const config = { catalogo: CATALOGO, asunto: (asuntoGuardado === "Encuesta breve sobre {tema}" ? ASUNTO_INICIAL : asuntoGuardado) || ASUNTO_INICIAL, mensaje: fijo(props.getProperty("mensaje")) || MENSAJE_INICIAL,
+  const config = { catalogo: CATALOGO, asunto: ASUNTO_INICIAL,   // el asunto se arma solo cada vez (encuesta + cliente) mensaje: fijo(props.getProperty("mensaje")) || MENSAJE_INICIAL,
     remitentes: remitentes, desde: props.getProperty("desde") || "", nombre: props.getProperty("nombre") || "", responderA: props.getProperty("responderA") || "",
     asuntoInicial: ASUNTO_INICIAL, mensajeInicial: MENSAJE_INICIAL, firma: leerFirma_() };
   return HtmlService.createHtmlOutput(PAGINA.replace("__CONFIG__", JSON.stringify(config).replace(/</g, "\\u003c")))
