@@ -1199,7 +1199,7 @@ $("desde").innerHTML = CONFIG.remitentes.map(function(r, i){ return '<option val
 function enlace(){ var c = slug($("nuevo").value), e = CONFIG.catalogo[$("encSel").value]; return c ? BASE + c + "/" + e.id + (e.grupo ? "" : $("grpSel").value) : ""; }
 function grupoVisible(){ var g = !!CONFIG.catalogo[$("encSel").value].grupo; $("grpSel").disabled = g; $("grpSel").title = g ? "Esta encuesta tiene un solo enlace" : ""; $("grpSel").style.opacity = g ? ".5" : ""; }
 $("encSel").addEventListener("change", grupoVisible);
-function texto(t){ var e = CONFIG.catalogo[$("encSel").value]; t = t.replace(/https:\/\/alexschecter\.github\.io\/encuestas\/#[^\s]*/g, "{enlace}"); return t.split("{cliente}").join($("nuevo").value.trim() || "tu empresa").split("{enlace}").join(enlace()).split("{minutos}").join(e.minutos).split("{tema}").join(e.tema || "la empresa"); }
+function texto(t){ var e = CONFIG.catalogo[$("encSel").value]; t = t.replace(/https:\\/\\/alexschecter\\.github\\.io\\/encuestas\\/#[^\\s]*/g, "{enlace}"); return t.split("{cliente}").join($("nuevo").value.trim() || "tu empresa").split("{enlace}").join(enlace()).split("{minutos}").join(e.minutos).split("{tema}").join(e.tema || "la empresa"); }
 function actualizar(){ var u = enlace(); $("enlace").value = u; $("wa").href = "https://wa.me/?text=" + encodeURIComponent(texto($("mensaje").value)); $("wa").style.pointerEvents = u ? "" : "none"; $("wa").style.opacity = u ? "" : ".5"; pend = 0; $("mail").textContent = "Enviar por email"; }
 ["encSel","grpSel","nuevo","mensaje","para"].forEach(function(id){ $(id).addEventListener("input", actualizar); $(id).addEventListener("change", actualizar); });
 var guardarT = null;
