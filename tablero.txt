@@ -21,24 +21,25 @@ const ENCUESTAS = [
 
 // Encuestas que se pueden enviar desde el tablero. Para sumar una nueva en el futuro, agregala acá.
 const CATALOGO = [
-  { id: "colaboracion", nombre: "Colaboración Interfuncional", minutos: "5 a 7" },
-  { id: "colaboracion-cultura", nombre: "Colaboración Interfuncional & Cultura", minutos: "10" },
-  { id: "cultura", nombre: "Cultura", minutos: "10" },
-  { id: "liderazgo", nombre: "Efectividad del equipo de liderazgo", minutos: "10" },
-  { id: "alineacion", nombre: "Alineación estratégica y prioridades", minutos: "10" },
-  { id: "feedback", nombre: "Feedback y conversaciones difíciles", minutos: "10" },
-  { id: "delegacion", nombre: "Delegación y ownership", minutos: "10" },
-  { id: "desarrollo-mandos-medios", nombre: "Necesidades de desarrollo · Mandos medios", minutos: "10", grupo: "mm" },
-  { id: "desarrollo-direccion", nombre: "Necesidades de desarrollo · Dirección", minutos: "10", grupo: "cl" },
+  { id: "colaboracion", tema: "cómo colaboramos entre áreas", nombre: "Colaboración Interfuncional", minutos: "5 a 7" },
+  { id: "colaboracion-cultura", tema: "cómo colaboramos entre áreas y la cultura", nombre: "Colaboración Interfuncional & Cultura", minutos: "10" },
+  { id: "cultura", tema: "la cultura", nombre: "Cultura", minutos: "10" },
+  { id: "liderazgo", tema: "cómo funciona el equipo de liderazgo", nombre: "Efectividad del equipo de liderazgo", minutos: "10" },
+  { id: "alineacion", tema: "la estrategia y las prioridades", nombre: "Alineación estratégica y prioridades", minutos: "10" },
+  { id: "feedback", tema: "el feedback y las conversaciones difíciles", nombre: "Feedback y conversaciones difíciles", minutos: "10" },
+  { id: "delegacion", tema: "la delegación y el ownership", nombre: "Delegación y ownership", minutos: "10" },
+  { id: "desarrollo-mandos-medios", tema: "tus necesidades de desarrollo como líder", nombre: "Necesidades de desarrollo · Mandos medios", minutos: "10", grupo: "mm" },
+  { id: "desarrollo-direccion", tema: "tus necesidades de desarrollo como líder", nombre: "Necesidades de desarrollo · Dirección", minutos: "10", grupo: "cl" },
 ];
-const ASUNTO_INICIAL = "Encuesta breve sobre colaboración entre áreas";
-const MENSAJE_INICIAL = "Hola,\n\nTe invito a completar una breve encuesta sobre cómo colaboramos entre áreas en {cliente}. Lleva unos {minutos} minutos y podés responderla de forma anónima.\n\n{enlace}\n\n¡Muchas gracias por tu tiempo!";
+const ASUNTO_INICIAL = "Encuesta breve sobre {tema}";
+const MENSAJE_INICIAL = "Hola,\n\nTe invito a completar una breve encuesta sobre {tema} en {cliente}. Lleva unos {minutos} minutos y podés responderla de forma anónima.\n\n{enlace}\n\n¡Muchas gracias por tu tiempo!";
 
 function doGet() {
   const props = PropertiesService.getUserProperties();
   let remitentes = [Session.getEffectiveUser().getEmail()];
   try { remitentes = remitentes.concat(GmailApp.getAliases()); } catch (e) {}
-  const config = { catalogo: CATALOGO, asunto: props.getProperty("asunto") || ASUNTO_INICIAL, mensaje: props.getProperty("mensaje") || MENSAJE_INICIAL,
+  const fijo = function (t) { return t && t.split("Encuesta breve sobre colaboración entre áreas").join("Encuesta breve sobre {tema}").split("encuesta sobre cómo colaboramos entre áreas en").join("encuesta sobre {tema} en"); };
+  const config = { catalogo: CATALOGO, asunto: fijo(props.getProperty("asunto")) || ASUNTO_INICIAL, mensaje: fijo(props.getProperty("mensaje")) || MENSAJE_INICIAL,
     remitentes: remitentes, desde: props.getProperty("desde") || "", nombre: props.getProperty("nombre") || "", responderA: props.getProperty("responderA") || "",
     asuntoInicial: ASUNTO_INICIAL, mensajeInicial: MENSAJE_INICIAL, firma: leerFirma_() };
   return HtmlService.createHtmlOutput(PAGINA.replace("__CONFIG__", JSON.stringify(config).replace(/</g, "\\u003c")))
@@ -1092,7 +1093,7 @@ a.btn { text-decoration:none; display:inline-block; }
   <label for="nuevo">Cliente</label><input id="nuevo" placeholder="Por ejemplo: Globex" autocomplete="off">
   <label for="enlace">Enlace</label><div class="row"><input id="enlace" readonly placeholder="Escribí el nombre del cliente"><button class="btn" type="button" id="copEnl">Copiar</button></div>
   <label for="asunto">Asunto</label><input id="asunto">
-  <label for="mensaje">Mensaje</label><div><textarea id="mensaje" rows="8"></textarea><p class="muted hint">Podés usar {cliente}, {enlace} y {minutos}: se completan solos. Tu texto se guarda para la próxima vez. <a href="#" id="reset">Volver al mensaje original</a></p></div>
+  <label for="mensaje">Mensaje</label><div><textarea id="mensaje" rows="8"></textarea><p class="muted hint">Podés usar {cliente}, {enlace}, {minutos} y {tema} (de qué trata la encuesta elegida): se completan solos. Tu texto se guarda para la próxima vez. <a href="#" id="reset">Volver al mensaje original</a></p></div>
 </div>
 <div class="row wrapr"><button class="btn" type="button" id="copMsg">Copiar mensaje</button><a class="btn" id="wa" target="_blank" rel="noopener">Abrir en WhatsApp</a></div>
 <div class="form"><label for="nombre">Tu nombre</label><input id="nombre" placeholder="Como lo ven quienes reciben el email">
@@ -1198,7 +1199,7 @@ $("desde").innerHTML = CONFIG.remitentes.map(function(r, i){ return '<option val
 function enlace(){ var c = slug($("nuevo").value), e = CONFIG.catalogo[$("encSel").value]; return c ? BASE + c + "/" + e.id + (e.grupo ? "" : $("grpSel").value) : ""; }
 function grupoVisible(){ var g = !!CONFIG.catalogo[$("encSel").value].grupo; $("grpSel").disabled = g; $("grpSel").title = g ? "Esta encuesta tiene un solo enlace" : ""; $("grpSel").style.opacity = g ? ".5" : ""; }
 $("encSel").addEventListener("change", grupoVisible);
-function texto(t){ var e = CONFIG.catalogo[$("encSel").value]; return t.split("{cliente}").join($("nuevo").value.trim() || "tu empresa").split("{enlace}").join(enlace()).split("{minutos}").join(e.minutos); }
+function texto(t){ var e = CONFIG.catalogo[$("encSel").value]; return t.split("{cliente}").join($("nuevo").value.trim() || "tu empresa").split("{enlace}").join(enlace()).split("{minutos}").join(e.minutos).split("{tema}").join(e.tema || "la empresa"); }
 function actualizar(){ var u = enlace(); $("enlace").value = u; $("wa").href = "https://wa.me/?text=" + encodeURIComponent(texto($("mensaje").value)); $("wa").style.pointerEvents = u ? "" : "none"; $("wa").style.opacity = u ? "" : ".5"; pend = 0; $("mail").textContent = "Enviar por email"; }
 ["encSel","grpSel","nuevo","mensaje","para"].forEach(function(id){ $(id).addEventListener("input", actualizar); $(id).addEventListener("change", actualizar); });
 var guardarT = null;
