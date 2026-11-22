@@ -1,0 +1,2313 @@
+[
+ {
+  "id": "cultura",
+  "nombre": "Cultura",
+  "titulo": "Cultura: valores vividos, confianza y seguridad psicológica",
+  "minutos": "10",
+  "intro": "Esta encuesta busca entender cómo se vive la cultura de la empresa en el día a día. No hay respuestas correctas o incorrectas: la idea es responder pensando en cómo son las cosas hoy, no en cómo deberían ser. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
+  "tipo": "dimensiones",
+  "tema": "la cultura",
+  "ayudaNombre": null,
+  "rolDesdeEnlace": true,
+  "secciones": [
+   {
+    "titulo": "Valores vividos",
+    "preguntas": [
+     {
+      "id": "CUL-01",
+      "titulo": "Los valores que la empresa declara se ven reflejados en las decisiones del día a día.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "CUL-02",
+      "titulo": "Cuando alguien obtiene buenos resultados pero actúa en contra de los valores de la empresa, lo que suele pasar es que:",
+      "tipo": "escenario",
+      "opciones": [
+       "Se le habla con claridad y se corrige, aunque sea de los que más rinden",
+       "Se le habla, pero sin mayores consecuencias",
+       "Se deja pasar mientras los resultados sigan llegando",
+       "Se lo reconoce o promueve igual"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "CUL-03",
+      "titulo": "Si alguien nuevo observara durante un mes cómo trabajamos, sin leer los valores escritos, describiría los mismos valores que la empresa declara.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Si los valores declarados se ven en las decisiones"
+   },
+   {
+    "titulo": "Confianza",
+    "preguntas": [
+     {
+      "id": "CUL-04",
+      "titulo": "Confío en que mis compañeros actúan con buenas intenciones, incluso cuando no estamos de acuerdo.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "CUL-05",
+      "titulo": "Cuando alguien asume un compromiso con otra área, lo cumple o avisa a tiempo si no va a poder.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "CUL-06",
+      "titulo": "Cuando hay un malentendido entre personas de distintas áreas, lo más común es que:",
+      "tipo": "escenario",
+      "opciones": [
+       "Lo hablen directamente entre ellas y pronto",
+       "Lo hablen, pero después de un tiempo y con tensión",
+       "Lo comenten con otros, pero no con la persona involucrada",
+       "Se escale o se deje de colaborar"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     }
+    ],
+    "desc": "Buena intención, compromisos cumplidos y hablar de frente"
+   },
+   {
+    "titulo": "Seguridad psicológica",
+    "preguntas": [
+     {
+      "id": "CUL-07",
+      "titulo": "Si cometo un error en mi trabajo, no se usa en mi contra.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "CUL-08",
+      "titulo": "Es seguro plantear un problema o una mala noticia a los niveles superiores.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "CUL-09",
+      "titulo": "En una reunión, cuando alguien cuestiona la idea de un líder de mayor jerarquía, normalmente:",
+      "tipo": "escenario",
+      "opciones": [
+       "El líder hace preguntas y considera la objeción en serio",
+       "Se escucha con cortesía, pero no cambia nada",
+       "Se nota la incomodidad y la persona no vuelve a hacerlo",
+       "Hay consecuencias negativas para quien cuestionó"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     }
+    ],
+    "desc": "Si es seguro equivocarse, plantear problemas y disentir"
+   },
+   {
+    "titulo": "Cómo se decide",
+    "preguntas": [
+     {
+      "id": "CUL-10",
+      "titulo": "Está claro quién toma cada tipo de decisión.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "CUL-11",
+      "titulo": "En la práctica, las decisiones importantes se toman:",
+      "tipo": "escenario",
+      "opciones": [
+       "Con aportes de quienes saben del tema, y luego se explica el porqué",
+       "Con algunos aportes, pero el porqué no siempre se explica",
+       "Entre una o dos personas, con poca consulta",
+       "En conversaciones informales; los demás nos enteramos después"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "CUL-12",
+      "titulo": "Una vez tomada una decisión, se respeta y no se reabre por la puerta de atrás.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Quién decide, con qué aportes, y si la decisión se sostiene"
+   },
+   {
+    "titulo": "Coherencia del liderazgo",
+    "preguntas": [
+     {
+      "id": "CUL-13",
+      "titulo": "Los líderes de la empresa actúan de la manera en que le piden actuar al resto.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "CUL-14",
+      "titulo": "Cuando algo sale mal, la primera reacción de los líderes suele ser:",
+      "tipo": "escenario",
+      "opciones": [
+       "Entender qué pasó y qué podemos aprender",
+       "Arreglarlo rápido y seguir, sin revisar qué pasó",
+       "Buscar a quién responsabilizar",
+       "Minimizarlo u ocultarlo"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "CUL-15",
+      "titulo": "Lo que los líderes miden, preguntan, recompensan y celebran es coherente con lo que dicen que es importante.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Si los líderes actúan como piden y premian lo que dicen"
+   },
+   {
+    "titulo": "Para cerrar",
+    "preguntas": [
+     {
+      "id": "CUL-OPEN",
+      "titulo": "¿Qué es lo que más ayudaría a que la cultura que vivimos se parezca a la que decimos tener?",
+      "obligatoria": false,
+      "tipo": "texto"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "liderazgo",
+  "nombre": "Efectividad del equipo de liderazgo",
+  "titulo": "Efectividad del equipo de liderazgo",
+  "minutos": "10",
+  "intro": "Esta encuesta busca entender cómo funciona el equipo de liderazgo. Cuando decimos \"mi equipo\" nos referimos al equipo de liderazgo del que formo parte (por ejemplo, el equipo directivo, o el grupo de líderes de mi área). No hay respuestas correctas o incorrectas: la idea es responder pensando en cómo son las cosas hoy. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
+  "tipo": "dimensiones",
+  "tema": "al equipo de liderazgo",
+  "ayudaNombre": null,
+  "rolDesdeEnlace": true,
+  "secciones": [
+   {
+    "titulo": "Mandato y roles",
+    "preguntas": [
+     {
+      "id": "LID-01",
+      "titulo": "Mi equipo tiene claro su mandato: qué espera la empresa de este equipo como equipo, más allá de lo que aporta cada área.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "LID-02",
+      "titulo": "Los líderes de mayor jerarquía respetan los roles: no pasan por encima de un miembro del equipo para darle instrucciones directamente a su gente.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "LID-03",
+      "titulo": "Cuando surge un tema nuevo que involucra a varias áreas:",
+      "tipo": "escenario",
+      "opciones": [
+       "Se define rápido un responsable y una fecha",
+       "Se define un responsable, pero tarda",
+       "Termina escalando al líder máximo para que lo resuelva",
+       "Cada área asume que lo resuelve otra y queda pendiente"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     }
+    ],
+    "desc": "Qué se espera del equipo y respeto por los roles"
+   },
+   {
+    "titulo": "Confianza entre pares",
+    "preguntas": [
+     {
+      "id": "LID-04",
+      "titulo": "En mi equipo podemos mostrar debilidades o pedir ayuda sin sentirnos expuestos.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "LID-05",
+      "titulo": "Cuando un par me desafía, confío en que lo hace por el bien del equipo.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "LID-06",
+      "titulo": "Cuando alguien de mi equipo comete un error que afecta a otros:",
+      "tipo": "escenario",
+      "opciones": [
+       "Lo reconoce abiertamente y el equipo ayuda a resolverlo",
+       "Lo reconoce cuando se le pregunta",
+       "Se justifica o lo minimiza",
+       "Lo oculta o culpa a otra área"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     }
+    ],
+    "desc": "Admitir errores y debilidades sin miedo"
+   },
+   {
+    "titulo": "Debate productivo",
+    "preguntas": [
+     {
+      "id": "LID-07",
+      "titulo": "En las reuniones de mi equipo se discuten abiertamente los temas difíciles.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "LID-08",
+      "titulo": "Cuando alguien no está de acuerdo con una propuesta en una reunión, lo más común es que:",
+      "tipo": "escenario",
+      "opciones": [
+       "Lo diga en la reunión, con sus argumentos",
+       "Lo diga a medias o con mucha cautela",
+       "Se calle y lo comente después en privado",
+       "Se calle y después no haga lo acordado"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "LID-09",
+      "titulo": "En mi equipo podemos discutir con intensidad una propuesta sin que nadie lo tome como un ataque personal.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Debatir ideas abiertamente en la reunión, no afuera"
+   },
+   {
+    "titulo": "Compromiso",
+    "preguntas": [
+     {
+      "id": "LID-10",
+      "titulo": "Al terminar una reunión, todos tenemos claro qué se decidió y quién hace qué, y lo comunicamos a nuestros equipos de forma consistente y rápida.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "LID-11",
+      "titulo": "Cuando mi equipo toma una decisión con la que alguien no estaba de acuerdo, esa persona:",
+      "tipo": "escenario",
+      "opciones": [
+       "La apoya plenamente frente a su propia gente",
+       "La ejecuta, pero sin convicción",
+       "La ejecuta a medias o la cuestiona frente a su gente",
+       "No la ejecuta o intenta reabrirla por otro lado"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "LID-12",
+      "titulo": "Para cada miembro, este equipo de liderazgo es su \"primer equipo\", por encima de su propia área.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Decisiones claras y apoyadas por todos"
+   },
+   {
+    "titulo": "Responsabilidad entre pares",
+    "preguntas": [
+     {
+      "id": "LID-13",
+      "titulo": "Cuando un par no cumple un compromiso, se lo decimos directamente.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "LID-14",
+      "titulo": "Si un miembro de mi equipo tiene un comportamiento que perjudica al equipo, lo más probable es que:",
+      "tipo": "escenario",
+      "opciones": [
+       "Un par se lo diga directamente y pronto",
+       "Se lo diga el líder del equipo",
+       "Se comente entre otros, pero nadie se lo diga",
+       "Se tolere indefinidamente"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "LID-15",
+      "titulo": "Mi equipo pone los resultados de la empresa por encima de los objetivos de cada área.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Exigirse entre pares y poner primero el resultado común"
+   },
+   {
+    "titulo": "Para cerrar",
+    "preguntas": [
+     {
+      "id": "LID-OPEN",
+      "titulo": "¿Qué cambio concreto haría que este equipo de liderazgo funcione mejor como equipo?",
+      "obligatoria": false,
+      "tipo": "texto"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "alineacion",
+  "nombre": "Alineación estratégica y prioridades",
+  "titulo": "Alineación estratégica y prioridades",
+  "minutos": "10",
+  "intro": "Esta encuesta busca entender qué tan claros y compartidos son el rumbo y las prioridades de la empresa. No hay respuestas correctas o incorrectas: la idea es responder pensando en cómo son las cosas hoy. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
+  "tipo": "dimensiones",
+  "tema": "la alineación estratégica",
+  "ayudaNombre": null,
+  "rolDesdeEnlace": true,
+  "secciones": [
+   {
+    "titulo": "Claridad del rumbo",
+    "preguntas": [
+     {
+      "id": "EST-01",
+      "titulo": "Entiendo hacia dónde va la empresa en los próximos 12 meses.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "EST-02",
+      "titulo": "Podría explicar con mis propias palabras por qué existe la empresa y qué la hace diferente.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "EST-03",
+      "titulo": "Si se les pidiera a cinco líderes de la empresa que nombren la prioridad número uno para los próximos 6 meses:",
+      "tipo": "escenario",
+      "opciones": [
+       "Todos dirían lo mismo",
+       "La mayoría coincidiría",
+       "Habría varias respuestas distintas",
+       "Cada uno nombraría la prioridad de su área"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     }
+    ],
+    "desc": "Hacia dónde vamos y cuál es la prioridad principal"
+   },
+   {
+    "titulo": "Foco en prioridades",
+    "preguntas": [
+     {
+      "id": "EST-04",
+      "titulo": "Tengo claro qué es lo más importante en mi trabajo y qué puede esperar.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "EST-05",
+      "titulo": "Cuando aparece una nueva iniciativa o urgencia:",
+      "tipo": "escenario",
+      "opciones": [
+       "Se decide explícitamente qué se deja de hacer para darle lugar",
+       "Se reordenan algunas cosas, pero no todo",
+       "Se suma a todo lo que ya había",
+       "Las prioridades cambian tan seguido que ya no se sabe cuáles son"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "EST-06",
+      "titulo": "Los recursos (personas, presupuesto, tiempo) se asignan según las prioridades declaradas.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Qué importa más, qué espera y qué se deja"
+   },
+   {
+    "titulo": "Alineación entre áreas",
+    "preguntas": [
+     {
+      "id": "EST-07",
+      "titulo": "Los objetivos de mi área están alineados con los de las áreas con las que trabajo.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "EST-08",
+      "titulo": "Cuando las prioridades de dos áreas chocan:",
+      "tipo": "escenario",
+      "opciones": [
+       "Se resuelve rápido, mirando qué es mejor para la empresa",
+       "Se resuelve, pero después de mucha negociación",
+       "Gana el área con más poder o el líder que más insiste",
+       "Queda sin resolver y cada área sigue con lo suyo"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "EST-09",
+      "titulo": "Sé cómo mi trabajo contribuye a los objetivos de otras áreas y de la empresa.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Objetivos de las áreas que encajan entre sí"
+   },
+   {
+    "titulo": "Comunicación de la estrategia",
+    "preguntas": [
+     {
+      "id": "EST-10",
+      "titulo": "Las decisiones estratégicas se comunican con su porqué, no solo con su qué.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "EST-11",
+      "titulo": "Me entero de los cambios de estrategia o de prioridades principalmente:",
+      "tipo": "escenario",
+      "opciones": [
+       "Por mi líder directo, con contexto y espacio para preguntar",
+       "Por un comunicado formal, con poco contexto",
+       "Por comentarios de pasillo o de otras personas",
+       "Cuando ya me afectan, sin aviso previo"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "EST-12",
+      "titulo": "Los mensajes clave de la dirección se repiten de forma consistente, no se dicen una vez y se olvidan.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Estrategia explicada con su porqué y de forma consistente"
+   },
+   {
+    "titulo": "Seguimiento y ritmo",
+    "preguntas": [
+     {
+      "id": "EST-13",
+      "titulo": "Cada objetivo prioritario tiene un solo responsable (no un comité), una métrica y una fecha.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "EST-14",
+      "titulo": "Cuando un objetivo prioritario se atrasa:",
+      "tipo": "escenario",
+      "opciones": [
+       "Se detecta pronto, se conversa y se ajusta el plan",
+       "Se detecta, pero tarde",
+       "Se sabe, pero nadie lo dice hasta que es evidente",
+       "Nadie hace seguimiento y se pierde"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "EST-15",
+      "titulo": "Hay un ritmo regular de reuniones (semanal, mensual, trimestral) donde se revisa el avance de las prioridades y se ajusta el plan.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Dueño, métrica y fecha para cada prioridad"
+   },
+   {
+    "titulo": "Para cerrar",
+    "preguntas": [
+     {
+      "id": "EST-OPEN",
+      "titulo": "Si pudiera pedirle a la dirección más claridad sobre una sola cosa, ¿cuál sería?",
+      "obligatoria": false,
+      "tipo": "texto"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "feedback",
+  "nombre": "Feedback y conversaciones difíciles",
+  "titulo": "Feedback y conversaciones difíciles",
+  "minutos": "10",
+  "intro": "Esta encuesta busca entender cómo se da y se recibe el feedback, y cómo se manejan las conversaciones difíciles. Algunas preguntas son sobre lo que recibo y otras sobre lo que hago yo. No hay respuestas correctas o incorrectas: la idea es responder con honestidad, pensando en cómo son las cosas hoy. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
+  "tipo": "dimensiones",
+  "tema": "el feedback",
+  "ayudaNombre": null,
+  "rolDesdeEnlace": true,
+  "secciones": [
+   {
+    "titulo": "Feedback que recibo",
+    "preguntas": [
+     {
+      "id": "FBK-01",
+      "titulo": "Recibo feedback sobre mi trabajo con la frecuencia que necesito.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "FBK-02",
+      "titulo": "El feedback que recibo suele ser:",
+      "tipo": "escenario",
+      "opciones": [
+       "Específico, basado en hechos y con ejemplos concretos",
+       "Útil, pero algo general",
+       "Vago (\"está bien\", \"hay que mejorar\")",
+       "Casi no recibo feedback"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "FBK-03",
+      "titulo": "En mi equipo, el buen trabajo se reconoce de forma concreta (qué se hizo bien y por qué importa).",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Cuánto y qué tan bueno es el feedback que recibo"
+   },
+   {
+    "titulo": "Feedback que doy",
+    "preguntas": [
+     {
+      "id": "FBK-04",
+      "titulo": "Cuando tengo que darle a alguien un feedback crítico, lo más habitual es que:",
+      "tipo": "escenario",
+      "opciones": [
+       "Se lo diga con claridad y mostrando que me importa como persona",
+       "Lo suavice tanto que el mensaje se pierde",
+       "Se lo diga de forma dura, sin cuidar mucho a la persona",
+       "No se lo diga de frente, pero lo comente con otros"
+      ],
+      "puntajes": [
+       100,
+       33,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "FBK-05",
+      "titulo": "Antes de dar un feedback difícil, lo más habitual para mí es:",
+      "tipo": "escenario",
+      "opciones": [
+       "Pensar qué quiero lograr y qué hechos concretos voy a compartir",
+       "Pensarlo un poco, pero improvisar en el momento",
+       "Darlo en caliente, apenas pasa algo",
+       "Postergarlo hasta que ya no se puede evitar"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "FBK-06",
+      "titulo": "Cuando doy feedback, separo los hechos de mis interpretaciones.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Cómo doy feedback: directo, cuidadoso y con hechos"
+   },
+   {
+    "titulo": "Apertura al feedback",
+    "preguntas": [
+     {
+      "id": "FBK-07",
+      "titulo": "Cuando alguien me da un feedback que no esperaba:",
+      "tipo": "escenario",
+      "opciones": [
+       "Pregunto para entender mejor y agradezco",
+       "Escucho, aunque me cuesta no justificarme",
+       "Me defiendo o explico por qué no es así",
+       "Me cierro y lo tomo como algo personal"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "FBK-08",
+      "titulo": "En las discusiones, se valora más descubrir qué es verdad que tener razón.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "FBK-09",
+      "titulo": "Cuando recibo feedback, cambio algo concreto como resultado.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Cómo lo recibo: curiosidad en lugar de defensa"
+   },
+   {
+    "titulo": "Conversaciones difíciles",
+    "preguntas": [
+     {
+      "id": "FBK-10",
+      "titulo": "Cuando tengo un tema difícil con alguien (un conflicto, una expectativa incumplida):",
+      "tipo": "escenario",
+      "opciones": [
+       "Lo hablo pronto y directamente con esa persona",
+       "Lo hablo, pero después de dejar pasar tiempo",
+       "Lo comento con otros antes que con la persona",
+       "Lo evito y espero que se resuelva solo"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "FBK-11",
+      "titulo": "En mi equipo se puede decir la verdad sin dañar la relación.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "FBK-12",
+      "titulo": "Cuando una conversación difícil se pone tensa, lo más común es que:",
+      "tipo": "escenario",
+      "opciones": [
+       "Alguien haga una pausa, se vuelva al objetivo común y se siga",
+       "Se siga adelante, aunque con tensión",
+       "Alguien se calle o se retire de la conversación",
+       "Suba el tono o se vuelva personal"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     }
+    ],
+    "desc": "Temas difíciles que se hablan a tiempo y bien"
+   },
+   {
+    "titulo": "La verdad hacia arriba",
+    "preguntas": [
+     {
+      "id": "FBK-13",
+      "titulo": "Puedo darle feedback honesto a mi líder sin temor a consecuencias.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "FBK-14",
+      "titulo": "Cuando hay malas noticias para la dirección:",
+      "tipo": "escenario",
+      "opciones": [
+       "Llegan rápido y sin filtrar",
+       "Llegan, pero suavizadas",
+       "Llegan tarde, cuando ya es difícil corregir",
+       "Se evitan o se ocultan para no provocar una reacción"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "FBK-15",
+      "titulo": "Mi líder me pide feedback sobre su propio desempeño (por ejemplo, qué podría hacer distinto para que sea más fácil trabajar con él o ella).",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Si la verdad y las malas noticias llegan a los líderes"
+   },
+   {
+    "titulo": "Para cerrar",
+    "preguntas": [
+     {
+      "id": "FBK-OPEN",
+      "titulo": "¿Qué conversación pendiente, si ocurriera, más ayudaría a mi equipo? (opcional, sin nombres)",
+      "tipo": "texto",
+      "obligatoria": false
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "delegacion",
+  "nombre": "Delegación y ownership",
+  "titulo": "Delegación y ownership",
+  "minutos": "10",
+  "intro": "Esta encuesta busca entender cómo se delega y cómo se asume el ownership. Algunas preguntas son sobre lo que me delegan a mí y otras sobre cómo delego yo. No hay respuestas correctas o incorrectas: la idea es responder pensando en cómo son las cosas hoy. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
+  "tipo": "dimensiones",
+  "tema": "la delegación",
+  "ayudaNombre": null,
+  "rolDesdeEnlace": true,
+  "secciones": [
+   {
+    "titulo": "Claridad de lo delegado",
+    "preguntas": [
+     {
+      "id": "DEL-01",
+      "titulo": "Cuando me delegan algo, tengo claro el resultado esperado y cómo se ve \"terminado\".",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "DEL-02",
+      "titulo": "Cuando delego una tarea o un proyecto, normalmente explico:",
+      "tipo": "escenario",
+      "opciones": [
+       "El resultado esperado, el contexto, los límites y la fecha",
+       "El resultado esperado y la fecha",
+       "Sobre todo los pasos a seguir",
+       "Lo mínimo; espero que pregunten si no entienden"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "DEL-03",
+      "titulo": "Entiendo el porqué de lo que me delegan y cómo encaja en el panorama general.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Resultado esperado, contexto y definición de terminado"
+   },
+   {
+    "titulo": "Autonomía y límites",
+    "preguntas": [
+     {
+      "id": "DEL-04",
+      "titulo": "Las decisiones fáciles de revertir las toma quien está más cerca del tema; solo las difíciles de revertir suben a un nivel superior.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "DEL-05",
+      "titulo": "Cuando surge un imprevisto en algo que me delegaron:",
+      "tipo": "escenario",
+      "opciones": [
+       "Decido dentro de mis límites y luego informo",
+       "Propongo una solución y pido aprobación",
+       "Consulto antes de hacer cualquier cosa",
+       "Espero a que mi líder lo resuelva"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "DEL-06",
+      "titulo": "Mi líder me deja decidir el \"cómo\", aunque él o ella lo haría distinto.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Decisiones en el nivel correcto y libertad en el cómo"
+   },
+   {
+    "titulo": "Ownership",
+    "preguntas": [
+     {
+      "id": "DEL-07",
+      "titulo": "Cuando un resultado del que soy responsable sale mal por algo que no dependía de mí:",
+      "tipo": "escenario",
+      "opciones": [
+       "Lo asumo como propio y busco qué podría haber hecho distinto",
+       "Explico lo que pasó y propongo cómo evitarlo la próxima vez",
+       "Aclaro que no dependía de mí",
+       "Señalo a la persona o al área responsable"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "DEL-08",
+      "titulo": "Cuando sé que no voy a poder cumplir un compromiso, lo aviso apenas me doy cuenta y propongo una alternativa.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "DEL-09",
+      "titulo": "Cuando algo no tiene dueño, alguien da un paso al frente para hacerse cargo.",
+      "tipo": "frecuencia",
+      "opciones": [
+       "Siempre",
+       "Casi siempre",
+       "A veces",
+       "Rara vez",
+       "Nunca"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Hacerse cargo de los resultados y tomar la iniciativa"
+   },
+   {
+    "titulo": "Seguimiento sin control",
+    "preguntas": [
+     {
+      "id": "DEL-10",
+      "titulo": "El seguimiento de lo que me delegan es, en general:",
+      "tipo": "escenario",
+      "opciones": [
+       "Acordado de antemano, con revisiones breves y regulares",
+       "Esporádico, cuando mi líder se acuerda",
+       "Constante y detallado; me siento controlado",
+       "Inexistente hasta que aparece un problema"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "DEL-11",
+      "titulo": "Cuando necesito ayuda con algo que me delegaron, la pido a tiempo y la recibo.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "DEL-12",
+      "titulo": "Cuando alguien de mi equipo resuelve algo delegado de una forma distinta a como lo haría yo:",
+      "tipo": "escenario",
+      "opciones": [
+       "Miro si el resultado cumple; si cumple, lo acepto",
+       "Lo acepto, pero le explico cómo lo habría hecho yo",
+       "Le pido que lo rehaga a mi manera",
+       "Lo rehago yo mismo"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     }
+    ],
+    "desc": "Seguimiento acordado y liviano, pedir ayuda a tiempo"
+   },
+   {
+    "titulo": "Delegar para crecer",
+    "preguntas": [
+     {
+      "id": "DEL-13",
+      "titulo": "Mi líder me delega responsabilidades que me ayudan a crecer, no solo tareas.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     },
+     {
+      "id": "DEL-14",
+      "titulo": "¿Qué parte de mi semana dedico a tareas que alguien de mi equipo podría hacer con la preparación adecuada?",
+      "tipo": "escenario",
+      "opciones": [
+       "Menos del 10%",
+       "Entre 10% y 25%",
+       "Entre 25% y 50%",
+       "Más del 50%"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ],
+      "mezclar": true
+     },
+     {
+      "id": "DEL-15",
+      "titulo": "En mi equipo hay personas preparadas para asumir parte de mis responsabilidades.",
+      "tipo": "acuerdo",
+      "opciones": [
+       "Totalmente de acuerdo",
+       "De acuerdo",
+       "Ni de acuerdo ni en desacuerdo",
+       "En desacuerdo",
+       "Totalmente en desacuerdo"
+      ],
+      "puntajes": [
+       100,
+       75,
+       50,
+       25,
+       0
+      ]
+     }
+    ],
+    "desc": "Delegar para desarrollar personas y liberar tiempo"
+   },
+   {
+    "titulo": "Para cerrar",
+    "preguntas": [
+     {
+      "id": "DEL-OPEN",
+      "titulo": "¿Qué es lo que más me frena para delegar más, o para asumir más ownership?",
+      "obligatoria": false,
+      "tipo": "texto"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "desarrollo-mandos-medios",
+  "nombre": "Necesidades de desarrollo · Mandos medios",
+  "titulo": "¿En qué quiero crecer como líder? (Mandos medios)",
+  "minutos": "10",
+  "intro": "Esta encuesta busca entender en qué temas cada líder siente que podría crecer más, para diseñar un programa de coaching que sea realmente útil. No es una evaluación de desempeño: no hay respuestas correctas, y cuanto más honesta sea la respuesta, mejor se va a poder adaptar el programa. Toma unos 10 minutos.",
+  "tipo": "desarrollo",
+  "grupo": "mm",
+  "instruccion": "Para cada tema, elegir la opción que mejor describe cómo me siento hoy.",
+  "tronco": "Hoy, ¿qué tan fuerte me siento en esto?",
+  "ayudaNombre": "Si lo comparto, el coach puede adaptar el programa a mí.",
+  "secciones": [
+   {
+    "titulo": "Sobre mí",
+    "perfil": true,
+    "preguntas": [
+     {
+      "id": "P-01",
+      "titulo": "¿Cuántos años llevo liderando equipos?",
+      "tipo": "perfil",
+      "opciones": [
+       "Menos de 1 año",
+       "1 a 3 años",
+       "3 a 5 años",
+       "Más de 5 años"
+      ]
+     },
+     {
+      "id": "P-02",
+      "titulo": "¿Cuántas personas tengo a cargo (directa o indirectamente)?",
+      "tipo": "perfil",
+      "opciones": [
+       "1 a 3",
+       "4 a 8",
+       "9 a 15",
+       "Más de 15"
+      ]
+     }
+    ]
+   },
+   {
+    "titulo": "Liderar a mi equipo",
+    "preguntas": [
+     {
+      "id": "NMM-01",
+      "titulo": "Dar feedback claro, específico y a tiempo a las personas de mi equipo (lo positivo y lo que hay que mejorar).",
+      "corto": "Feedback a mi equipo",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NMM-02",
+      "titulo": "Tener conversaciones difíciles (bajo rendimiento, conflictos, expectativas incumplidas) sin postergarlas.",
+      "corto": "Conversaciones difíciles",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NMM-03",
+      "titulo": "Entender qué motiva a cada persona de mi equipo y ayudarla a crecer.",
+      "corto": "Motivar y desarrollar personas",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     }
+    ],
+    "area": true
+   },
+   {
+    "titulo": "Delegación y ejecución",
+    "preguntas": [
+     {
+      "id": "NMM-04",
+      "titulo": "Delegar resultados (no solo tareas), con contexto claro y una definición de \"terminado\".",
+      "corto": "Delegar con claridad",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NMM-05",
+      "titulo": "Distinguir lo importante de lo urgente y decir que no, o \"ahora no\", cuando hace falta.",
+      "corto": "Priorizar y gestionar mi tiempo",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NMM-06",
+      "titulo": "Hacer seguimiento de lo delegado sin controlar de más ni desentenderme.",
+      "corto": "Seguimiento sin microgestión",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     }
+    ],
+    "area": true
+   },
+   {
+    "titulo": "Colaboración y comunicación",
+    "preguntas": [
+     {
+      "id": "NMM-07",
+      "titulo": "Trabajar con otras áreas y resolver desacuerdos con ellas de forma directa y constructiva.",
+      "corto": "Colaborar con otras áreas",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NMM-08",
+      "titulo": "Plantearle a mi líder problemas, desacuerdos o necesidades de forma clara y a tiempo.",
+      "corto": "Gestionar hacia arriba",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NMM-09",
+      "titulo": "Explicarle a mi equipo las decisiones de la dirección, con su porqué, aunque no las haya tomado yo.",
+      "corto": "Comunicar decisiones de la dirección",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     }
+    ],
+    "area": true
+   },
+   {
+    "titulo": "Liderazgo personal",
+    "preguntas": [
+     {
+      "id": "NMM-10",
+      "titulo": "Mantener la calma y la claridad cuando las cosas se ponen intensas, sin reaccionar en automático.",
+      "corto": "Manejar la presión y mis emociones",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NMM-11",
+      "titulo": "Tomar decisiones y hacerme cargo de ellas, aunque no tenga toda la información.",
+      "corto": "Decidir con información incompleta",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NMM-12",
+      "titulo": "Dejar de resolver todo yo y enfocarme en que mi equipo pueda hacerlo sin mí.",
+      "corto": "De hacer a liderar",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     }
+    ],
+    "area": true
+   },
+   {
+    "titulo": "¿En qué quiero crecer?",
+    "preguntas": [
+     {
+      "id": "NMM-B1",
+      "titulo": "De esta lista, ¿en qué 3 temas me gustaría recibir coaching en los próximos 6 meses? (elegir exactamente 3)",
+      "tipo": "elegir3",
+      "opciones": [
+       "Feedback a mi equipo",
+       "Conversaciones difíciles",
+       "Motivar y desarrollar personas",
+       "Delegar con claridad",
+       "Priorizar y gestionar mi tiempo",
+       "Seguimiento sin microgestión",
+       "Colaborar con otras áreas",
+       "Gestionar hacia arriba",
+       "Comunicar decisiones de la dirección",
+       "Manejar la presión y mis emociones",
+       "Decidir con información incompleta",
+       "De hacer a liderar"
+      ]
+     }
+    ]
+   },
+   {
+    "titulo": "En mis palabras",
+    "preguntas": [
+     {
+      "id": "NMM-C1",
+      "titulo": "¿Cuál es el desafío concreto de liderazgo que más me gustaría resolver en los próximos 6 meses?",
+      "obligatoria": true,
+      "tipo": "texto"
+     },
+     {
+      "id": "NMM-C2",
+      "titulo": "¿Hay algún tema que no aparece en la lista y en el que me gustaría recibir apoyo?",
+      "obligatoria": false,
+      "tipo": "texto"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "desarrollo-direccion",
+  "nombre": "Necesidades de desarrollo · Dirección",
+  "titulo": "¿En qué quiero crecer como líder? (Dirección y fundadores)",
+  "minutos": "10",
+  "intro": "Esta encuesta busca entender en qué temas cada miembro de la dirección siente que podría crecer más, para diseñar un acompañamiento de coaching que sea realmente útil. No es una evaluación de desempeño: no hay respuestas correctas, y cuanto más honesta sea la respuesta, mejor se va a poder adaptar el trabajo. Toma unos 10 minutos.",
+  "tipo": "desarrollo",
+  "grupo": "cl",
+  "instruccion": "Para cada tema, elegir la opción que mejor describe cómo me siento hoy.",
+  "tronco": "Hoy, ¿qué tan fuerte me siento en esto?",
+  "ayudaNombre": "Si lo comparto, el coach puede adaptar el trabajo a mí.",
+  "secciones": [
+   {
+    "titulo": "Sobre mí",
+    "perfil": true,
+    "preguntas": [
+     {
+      "id": "P-01",
+      "titulo": "¿Soy fundador/a o cofundador/a de la empresa?",
+      "tipo": "perfil",
+      "opciones": [
+       "Sí",
+       "No"
+      ]
+     },
+     {
+      "id": "P-02",
+      "titulo": "¿Cuántos años llevo en un rol de dirección?",
+      "tipo": "perfil",
+      "opciones": [
+       "Menos de 1 año",
+       "1 a 3 años",
+       "3 a 5 años",
+       "Más de 5 años"
+      ]
+     }
+    ]
+   },
+   {
+    "titulo": "Liderar al equipo directivo",
+    "preguntas": [
+     {
+      "id": "NCL-01",
+      "titulo": "Lograr que el equipo directivo funcione como un verdadero equipo: confianza, debate abierto y compromiso con las decisiones.",
+      "corto": "Construir un equipo directivo cohesionado",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NCL-02",
+      "titulo": "Decir lo que pienso con claridad a mis socios, cofundadores o directorio, aunque incomode.",
+      "corto": "Conversaciones francas con socios y directorio",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NCL-03",
+      "titulo": "Hacer que mis reportes directos se hagan cargo de sus resultados, y tener la conversación cuando no lo hacen.",
+      "corto": "Exigir responsabilidad",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     }
+    ],
+    "area": true
+   },
+   {
+    "titulo": "Estrategia y foco",
+    "preguntas": [
+     {
+      "id": "NCL-04",
+      "titulo": "Definir y comunicar hacia dónde vamos y qué es lo más importante ahora, de forma que toda la empresa lo entienda igual.",
+      "corto": "Dar claridad estratégica",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NCL-05",
+      "titulo": "Elegir pocas prioridades y renunciar a buenas oportunidades para proteger el foco.",
+      "corto": "Decir que no",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NCL-06",
+      "titulo": "Tomar decisiones difíciles a tiempo (personas, cambios de rumbo, recursos), aunque no haya certeza.",
+      "corto": "Tomar decisiones difíciles",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     }
+    ],
+    "area": true
+   },
+   {
+    "titulo": "Escalar la organización",
+    "preguntas": [
+     {
+      "id": "NCL-07",
+      "titulo": "Delegar lo operativo y dedicar mi tiempo a lo que solo yo puedo hacer.",
+      "corto": "Salir del día a día",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NCL-08",
+      "titulo": "Instalar ritmos de reuniones, métricas y procesos que hagan que la empresa funcione sin depender de mí.",
+      "corto": "Construir sistemas",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NCL-09",
+      "titulo": "Encarnar y transmitir la cultura que queremos a medida que la empresa crece y suma capas.",
+      "corto": "Moldear la cultura",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     }
+    ],
+    "area": true
+   },
+   {
+    "titulo": "Liderazgo personal",
+    "preguntas": [
+     {
+      "id": "NCL-10",
+      "titulo": "Lograr que mi equipo me diga lo que realmente piensa, incluidas las malas noticias, sin suavizarlo.",
+      "corto": "Recibir la verdad sin filtro",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NCL-11",
+      "titulo": "Liderar a un ritmo sostenible, cuidando mi energía, mi foco y mi vida fuera del trabajo.",
+      "corto": "Sostener mi energía",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     },
+     {
+      "id": "NCL-12",
+      "titulo": "Adaptar mi forma de liderar a lo que la empresa necesita hoy, aunque implique soltar lo que antes me funcionó.",
+      "corto": "Evolucionar como líder",
+      "tipo": "habilidad",
+      "opciones": [
+       "Es una fortaleza clara",
+       "Lo hago bien, con margen de mejora",
+       "Me cuesta; me vendría bien apoyo",
+       "Es un área nueva o muy difícil para mí"
+      ],
+      "puntajes": [
+       100,
+       67,
+       33,
+       0
+      ]
+     }
+    ],
+    "area": true
+   },
+   {
+    "titulo": "¿En qué quiero crecer?",
+    "preguntas": [
+     {
+      "id": "NCL-B1",
+      "titulo": "De esta lista, ¿en qué 3 temas me gustaría recibir coaching en los próximos 6 meses? (elegir exactamente 3)",
+      "tipo": "elegir3",
+      "opciones": [
+       "Construir un equipo directivo cohesionado",
+       "Conversaciones francas con socios y directorio",
+       "Exigir responsabilidad",
+       "Dar claridad estratégica",
+       "Decir que no",
+       "Tomar decisiones difíciles",
+       "Salir del día a día",
+       "Construir sistemas",
+       "Moldear la cultura",
+       "Recibir la verdad sin filtro",
+       "Sostener mi energía",
+       "Evolucionar como líder"
+      ]
+     }
+    ]
+   },
+   {
+    "titulo": "En mis palabras",
+    "preguntas": [
+     {
+      "id": "NCL-C1",
+      "titulo": "¿Cuál es el desafío concreto de liderazgo que más me gustaría resolver este año?",
+      "obligatoria": true,
+      "tipo": "texto"
+     },
+     {
+      "id": "NCL-C2",
+      "titulo": "Si tuviera un coach, ¿qué me gustaría que me ayude a ver que hoy quizás no veo?",
+      "obligatoria": false,
+      "tipo": "texto"
+     }
+    ]
+   }
+  ]
+ }
+]

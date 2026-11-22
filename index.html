@@ -116,6 +116,10 @@ button:focus-visible, textarea:focus-visible, .opt:has(input:focus-visible) { ou
 .opts { display: grid; gap: 8px; }
 .opts.scale { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .opts.scale.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.opts.scale.n5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.opt .box { width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--line); flex: none; }
+.opt:has(input:checked) .box { border: 5px solid var(--accent); }
+.q .stem { font-size: .82rem; color: var(--muted); font-weight: 500; margin-left: calc(1.6em + 10px); margin-bottom: -6px; }
 .opt { position: relative; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; cursor: pointer; font-size: 0.95rem; background: var(--surface); transition: background .15s, border-color .15s; min-width: 0; }
 .opts.scale .opt { justify-content: center; text-align: center; padding: 12px 8px; font-size: 0.9rem; }
 .opt input { position: absolute; opacity: 0; pointer-events: none; }
@@ -162,6 +166,7 @@ textarea { width: 100%; min-height: 110px; border: 1px solid var(--line); border
 @media (max-width: 620px) {
   .opts.scale { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .opts.scale.n3 { grid-template-columns: 1fr; }
+  .opts.scale.n5 { grid-template-columns: 1fr; }
   .score { grid-template-columns: 1fr; justify-items: start; }
   .two { grid-template-columns: 1fr; }
   .rail .lbl .secname { display: none; }
@@ -173,7 +178,7 @@ textarea { width: 100%; min-height: 110px; border: 1px solid var(--line); border
   <header class="top">
     <div class="brand">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8" cy="12" r="5.5" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="12" r="5.5" stroke="var(--accent)" stroke-width="2"/></svg>
-      Encuesta de Colaboración
+      <span id="brandName">Encuesta de Colaboración</span>
     </div>
   </header>
   <main id="app"></main>
@@ -243,6 +248,18 @@ const DIAGNOSTICS = [
   { id: "colab-cultura-direccion", title: "Colaboración Interfuncional & Cultura", minutes: "10 min", purpose: PURPOSE_CULTURA, sections: [...COLAB_SECTIONS, CULTURE_SECTION] },
 ];
 
+// ---------- Encuestas nuevas (definidas en encuestas.json) ----------
+// Enlaces: #<cliente>/<id> para mandos medios y #<cliente>/<id>-direccion para Dirección (encuestas 1 a 5).
+// Las de desarrollo (desarrollo-mandos-medios, desarrollo-direccion) tienen un solo enlace cada una.
+// Los números de "entries" salen de la función crearEncuestasNuevas del tablero (pegados acá una sola vez).
+const NUEVAS_ENVIO = {};
+let NUEVAS = null;
+function convertir(e) {
+  return { id: e.id, nueva: e, title: e.titulo, minutes: e.minutos + " min", purpose: e.intro,
+    sections: e.secciones.map((x, si) => ({ id: "s" + si, title: x.titulo, hint: x.area ? e.instruccion : "",
+      qs: x.preguntas.map(q => [q.titulo, q.tipo === "texto" ? null : q.opciones, q]) })) };
+}
+
 // ---------- Envío de respuestas ----------
 // Cada encuesta envía sus respuestas a su propio Google Form (creados en la cuenta de Alex el 21/11/2026).
 // "entries" sigue el orden exacto de las preguntas de arriba. Si agregás, quitás o reordenás preguntas, actualizá también esta lista (o pedile a Claude que lo haga).
@@ -267,7 +284,25 @@ const store = {
 let state = { view: "home", diag: null, sec: 0, answers: {} };
 const key = id => "diag-draft-" + (state.client ? state.client + "/" : "") + id;
 const qid = (s, i) => s + "." + i;
-function save() { if (state.diag) store.set(key(state.diag.id), { sec: state.sec, answers: state.answers, view: state.view }); }
+function save() { if (state.diag) store.set(key(state.diag.id), { sec: state.sec, answers: state.answers, view: state.view, orden: state.orden }); }
+// Una pregunta está respondida si tiene opción elegida, 3 temas marcados (elegir 3) o texto (si es obligatoria).
+const meta = q => q[2] || {};
+const requerida = q => q[1] ? true : !!meta(q).obligatoria;
+function respondida(q, v) {
+  if (meta(q).tipo === "elegir3") return Array.isArray(v) && v.length === 3;
+  if (q[1]) return typeof v === "number";
+  return typeof v === "string" && v.trim().length > 0;
+}
+function contar() {
+  let total = 0, done = 0;
+  state.diag.sections.forEach(s => s.qs.forEach((q, i) => { if (!requerida(q)) return; total++; if (respondida(q, state.answers[qid(s.id, i)])) done++; }));
+  return { total, done };
+}
+// Orden aleatorio (fijo para cada persona) de las opciones de las preguntas de escenario.
+function ordenDe(id, n) {
+  if (!state.orden[id]) { const a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } state.orden[id] = a; }
+  return state.orden[id];
+}
 
 function toast(msg) {
   const t = document.getElementById("toast");
@@ -296,20 +331,36 @@ function renderClosed() {
     </section>`;
 }
 
-function startFromLink() {
+async function cargarNuevas() {
+  if (NUEVAS) return NUEVAS;
+  try { NUEVAS = await (await fetch("encuestas.json", { cache: "no-cache" })).json(); } catch { NUEVAS = []; }
+  return NUEVAS;
+}
+async function startFromLink() {
   // Enlaces públicos: #colaboracion, #colaboracion-cultura, #colaboracion-direccion, #colaboracion-cultura-direccion
   // Con cliente: #<cliente>/colaboracion (el cliente se guarda en el campo oculto "Cliente" del formulario)
   const parts = decodeURIComponent(location.hash.slice(1)).split("/");
   const h = parts.pop().replace(/^colaboracion/, "colab");
   state.client = parts.join("/").trim();
-  const d = DIAGNOSTICS.find(x => x.id === h);
+  let d = DIAGNOSTICS.find(x => x.id === h), rol = null;
+  if (!d) {
+    const lista = await cargarNuevas();
+    let e = lista.find(x => x.id === h);
+    if (e) rol = e.grupo || "mm";
+    else { e = lista.find(x => x.rolDesdeEnlace && x.id + "-direccion" === h); if (e) rol = "cl"; }
+    if (e) d = convertir(e);
+  }
+  if (d && d.nueva && rol === "cl" && d.nueva.rolDesdeEnlace) d.id = d.id + "-direccion";
+  document.getElementById("brandName").textContent = d && d.nueva ? "Encuesta" : "Encuesta de Colaboración";
+  document.title = d ? d.title : "Encuesta";
   const client = state.client;
   if (!d) { state = { view: "home", diag: null, sec: 0, answers: {} }; return render(); }
   const draft = store.get(key(d.id));
-  state = { view: "intro", diag: d, sec: 0, answers: {}, client };
-  if (!SUBMIT[d.id].formId) state.view = "closed";
+  state = { view: "intro", diag: d, sec: 0, answers: {}, client, rol, orden: {} };
+  if (d.nueva) state.anon = d.nueva.tipo !== "desarrollo";
+  if (!((d.nueva ? NUEVAS_ENVIO[d.nueva.id] : SUBMIT[d.id]) || {}).formId) state.view = "closed";
   else if (store.get("sent-" + (client ? client + "/" : "") + d.id)) state.view = "thanks";
-  else if (draft && Object.keys(draft.answers || {}).length) { state.answers = draft.answers; state.sec = draft.sec || 0; state.view = "survey"; }
+  else if (draft && Object.keys(draft.answers || {}).length) { state.answers = draft.answers; state.sec = draft.sec || 0; state.orden = draft.orden || {}; state.view = "survey"; }
   render(); window.scrollTo({ top: 0 });
 }
 
@@ -320,7 +371,7 @@ function renderIntro() {
       <span class="eyebrow">Encuesta · ${d.minutes}</span>
       <h1>${esc(d.title)}</h1>
       <p class="muted" style="max-width:60ch;font-size:1.05rem">${esc(d.purpose)}</p>
-      <div class="panel">
+      ${d.nueva ? "" : `<div class="panel">
         <h3>Antes de empezar</h3>
         <ul>
           <li>Marcá la opción que más se parece a lo que realmente ocurre en tu día a día.</li>
@@ -329,7 +380,7 @@ function renderIntro() {
           <li>No es una evaluación personal: miramos cómo funciona el equipo en conjunto.</li>
           <li>Respondé con honestidad: tu experiencia es esencial.</li>
         </ul>
-      </div>
+      </div>`}
       <div class="row"><button class="btn" id="start" type="button">Empezar</button></div>
     </section>`;
   document.getElementById("start").onclick = () => go("survey");
@@ -337,8 +388,7 @@ function renderIntro() {
 
 function renderSurvey(showMissing = false) {
   const d = state.diag, s = d.sections[state.sec];
-  const total = d.sections.flatMap(x => x.qs).filter(q => q[1]).length;
-  const done = Object.entries(state.answers).filter(([k, v]) => typeof v === "number").length;
+  const { total, done } = contar();
   let n = d.sections.slice(0, state.sec).reduce((a, x) => a + x.qs.length, 0);
   const last = state.sec === d.sections.length - 1;
   app.innerHTML = `
@@ -349,22 +399,34 @@ function renderSurvey(showMissing = false) {
     <section class="sechead">
       <span class="eyebrow">${esc(d.title)}</span>
       <h2>${esc(s.title)}</h2>
-      <p class="muted">${esc(s.hint)}</p>
+      ${s.hint ? `<p class="muted">${esc(s.hint)}</p>` : ""}
     </section>
     <div class="qs">
-      ${s.qs.map(([text, opts], i) => {
+      ${s.qs.map((q, i) => {
+        const [text, opts] = q, m = meta(q);
         n++;
         const id = qid(s.id, i), val = state.answers[id];
-        const miss = showMissing && opts && typeof val !== "number";
-        if (!opts) return `<div class="q" id="q-${id}">
-            <label class="qt" for="t-${id}"><span class="qn">${n}</span><span>${esc(text)} <span class="optional">Opcional</span></span></label>
+        const miss = showMissing && requerida(q) && !respondida(q, val);
+        if (!opts) return `<div class="q ${miss ? "missing" : ""}" id="q-${id}">
+            <label class="qt" for="t-${id}"><span class="qn">${n}</span><span>${esc(text)}${requerida(q) ? "" : ` <span class="optional">Opcional</span>`}</span></label>
             <textarea id="t-${id}" data-q="${id}" placeholder="Escribí tu respuesta…">${esc(val || "")}</textarea>
           </div>`;
+        if (m.tipo === "elegir3") {
+          const sel = Array.isArray(val) ? val : [];
+          return `<div role="group" aria-labelledby="l-${id}" class="q ${miss ? "missing" : ""}" id="q-${id}">
+          <div class="qt" id="l-${id}"><span class="qn">${n}</span><span>${esc(text)} <span class="optional" id="c-${id}">${sel.length} de 3 elegidos</span></span></div>
+          <div class="opts">
+            ${opts.map((o, j) => `<label class="opt"><input type="checkbox" data-multi="${id}" value="${j}" ${sel.includes(j) ? "checked" : ""}><span class="box"></span><span>${esc(o)}</span></label>`).join("")}
+          </div>
+        </div>`;
+        }
+        const orden = m.mezclar ? ordenDe(id, opts.length) : opts.map((_, j) => j);
         const scale = opts.every(o => o.length <= 22);
         return `<div role="radiogroup" aria-labelledby="l-${id}" class="q ${miss ? "missing" : ""}" id="q-${id}">
+          ${m.tipo === "habilidad" && d.nueva.tronco ? `<div class="stem">${esc(d.nueva.tronco)}</div>` : ""}
           <div class="qt" id="l-${id}"><span class="qn">${n}</span><span>${esc(text)}</span></div>
-          <div class="opts ${scale ? "scale" : ""} ${opts.length === 3 ? "n3" : ""}">
-            ${opts.map((o, j) => `<label class="opt"><input type="radio" id="r-${id}-${j}" name="${id}" value="${j}" ${val === j ? "checked" : ""}><span class="dot"></span><span>${esc(o)}</span></label>`).join("")}
+          <div class="opts ${scale ? "scale" : ""} ${opts.length === 3 ? "n3" : opts.length === 5 ? "n5" : ""}">
+            ${orden.map(j => `<label class="opt"><input type="radio" id="r-${id}-${j}" name="${id}" value="${j}" ${val === j ? "checked" : ""}><span class="dot"></span><span>${esc(opts[j])}</span></label>`).join("")}
           </div>
         </div>`;
       }).join("")}
@@ -378,19 +440,28 @@ function renderSurvey(showMissing = false) {
   app.querySelectorAll("input[type=radio]").forEach(r => r.onchange = () => {
     state.answers[r.name] = +r.value; save();
     const box = document.getElementById("q-" + r.name); box.classList.remove("missing");
-    const doneNow = Object.values(state.answers).filter(v => typeof v === "number").length;
-    document.getElementById("count").textContent = `${doneNow} de ${total} respondidas`;
+    document.getElementById("count").textContent = `${contar().done} de ${total} respondidas`;
   });
-  app.querySelectorAll("textarea").forEach(t => t.oninput = () => { state.answers[t.dataset.q] = t.value; save(); });
+  app.querySelectorAll("input[data-multi]").forEach(c => c.onchange = () => {
+    const id = c.dataset.multi, sel = Array.isArray(state.answers[id]) ? state.answers[id].slice() : [], j = +c.value;
+    if (c.checked) { if (sel.length >= 3) { c.checked = false; toast("Elegí exactamente 3 temas."); return; } sel.push(j); }
+    else sel.splice(sel.indexOf(j), 1);
+    state.answers[id] = sel; save();
+    document.getElementById("c-" + id).textContent = sel.length + " de 3 elegidos";
+    if (sel.length === 3) document.getElementById("q-" + id).classList.remove("missing");
+    document.getElementById("count").textContent = `${contar().done} de ${total} respondidas`;
+  });
+  app.querySelectorAll("textarea").forEach(t => t.oninput = () => { state.answers[t.dataset.q] = t.value; save(); document.getElementById("count").textContent = `${contar().done} de ${total} respondidas`; });
   document.getElementById("prev").onclick = () => { if (state.sec > 0) { state.sec--; go("survey"); } else go("intro"); };
   document.getElementById("next").onclick = () => {
-    const missing = s.qs.map((q, i) => q[1] && typeof state.answers[qid(s.id, i)] !== "number" ? qid(s.id, i) : null).filter(Boolean);
+    const missing = s.qs.map((q, i) => requerida(q) && !respondida(q, state.answers[qid(s.id, i)]) ? qid(s.id, i) : null).filter(Boolean);
     if (missing.length) { renderSurvey(true); document.getElementById("q-" + missing[0]).scrollIntoView({ behavior: "smooth", block: "center" }); return; }
     if (last) go("submit"); else { state.sec++; go("survey"); }
   };
 }
 
 async function sendAnswers(d, name) {
+  if (d.nueva) return sendNueva(d, name);
   const cfg = SUBMIT[d.id];
   const body = new URLSearchParams();
   let k = 0;
@@ -404,10 +475,24 @@ async function sendAnswers(d, name) {
   body.append("pageHistory", Array.from({ length: cfg.pages }, (_, i) => i).join(","));
   await fetch(`https://docs.google.com/forms/d/e/${cfg.formId}/formResponse`, { method: "POST", mode: "no-cors", body });
 }
+async function sendNueva(d, name) {
+  const cfg = NUEVAS_ENVIO[d.nueva.id], body = new URLSearchParams();
+  d.sections.forEach(s => s.qs.forEach((q, i) => {
+    const [text, opts] = q, m = meta(q), v = state.answers[qid(s.id, i)], entry = cfg.entries[m.id];
+    if (!entry) return;
+    if (m.tipo === "elegir3" && Array.isArray(v)) v.forEach(j => body.append("entry." + entry, opts[j]));
+    else if (opts && typeof v === "number") body.append("entry." + entry, opts[v]);
+    else if (!opts && v && v.trim()) body.append("entry." + entry, v.trim());
+  }));
+  if (cfg.entries.ROL) body.append("entry." + cfg.entries.ROL, state.rol === "cl" ? "Dirección" : "Mandos medios");
+  if (cfg.entries.NOMBRE && name) body.append("entry." + cfg.entries.NOMBRE, name);
+  if (cfg.entries.CLIENTE && state.client) body.append("entry." + cfg.entries.CLIENTE, state.client);
+  body.append("pageHistory", "0");
+  await fetch(`https://docs.google.com/forms/d/e/${cfg.formId}/formResponse`, { method: "POST", mode: "no-cors", body });
+}
 function renderSubmit() {
-  const d = state.diag, cfg = SUBMIT[d.id];
-  const total = d.sections.flatMap(x => x.qs).filter(q => q[1]).length;
-  const done = Object.values(state.answers).filter(v => typeof v === "number").length;
+  const d = state.diag, cfg = d.nueva ? { nameEntry: true } : SUBMIT[d.id];
+  const { total, done } = contar();
   const anon = state.anon !== false;
   app.innerHTML = `
     <section class="intro">
@@ -418,7 +503,7 @@ function renderSubmit() {
         <div class="qt" id="anon-l" style="font-weight:600">¿Cómo querés enviar tus respuestas?</div>
         <div class="opts">
           <label class="opt"><input type="radio" id="anon-yes" name="anon" value="1" ${anon ? "checked" : ""}><span class="dot"></span><span><strong>De forma anónima</strong><br><span class="muted" style="font-weight:400">No se guarda tu nombre ni tu email.</span></span></label>
-          ${cfg.nameEntry ? `<label class="opt"><input type="radio" id="anon-no" name="anon" value="0" ${anon ? "" : "checked"}><span class="dot"></span><span><strong>Con mi nombre</strong><br><span class="muted" style="font-weight:400">Solo lo ve quien analiza la encuesta.</span></span></label>` : ""}
+          ${cfg.nameEntry ? `<label class="opt"><input type="radio" id="anon-no" name="anon" value="0" ${anon ? "" : "checked"}><span class="dot"></span><span><strong>Con mi nombre</strong><br><span class="muted" style="font-weight:400">${esc(d.nueva && d.nueva.ayudaNombre || "Solo lo ve quien analiza la encuesta.")}</span></span></label>` : ""}
         </div>
         <div id="nameBox" ${anon ? "hidden" : ""} style="display:grid;gap:6px">
           <label for="name" class="muted" style="font-size:.9rem">Tu nombre</label>
@@ -451,7 +536,7 @@ function renderThanks() {
     <section class="intro">
       <span class="eyebrow">${esc(d.title)}</span>
       <h1>¡Gracias por responder!</h1>
-      <p class="muted" style="font-size:1.05rem;max-width:56ch">Tus respuestas se enviaron. Vamos a juntar las respuestas de todo el equipo para ver cómo trabajamos entre áreas y compartir lo que aprendamos.</p>
+      <p class="muted" style="font-size:1.05rem;max-width:56ch">${d.nueva ? "Tus respuestas se enviaron. ¡Muchas gracias por tu tiempo!" : "Tus respuestas se enviaron. Vamos a juntar las respuestas de todo el equipo para ver cómo trabajamos entre áreas y compartir lo que aprendamos."}</p>
       <p class="muted">Ya podés cerrar esta página.</p>
     </section>`;
 }

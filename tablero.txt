@@ -23,6 +23,13 @@ const ENCUESTAS = [
 const CATALOGO = [
   { id: "colaboracion", nombre: "Colaboración Interfuncional", minutos: "5 a 7" },
   { id: "colaboracion-cultura", nombre: "Colaboración Interfuncional & Cultura", minutos: "10" },
+  { id: "cultura", nombre: "Cultura", minutos: "10" },
+  { id: "liderazgo", nombre: "Efectividad del equipo de liderazgo", minutos: "10" },
+  { id: "alineacion", nombre: "Alineación estratégica y prioridades", minutos: "10" },
+  { id: "feedback", nombre: "Feedback y conversaciones difíciles", minutos: "10" },
+  { id: "delegacion", nombre: "Delegación y ownership", minutos: "10" },
+  { id: "desarrollo-mandos-medios", nombre: "Necesidades de desarrollo · Mandos medios", minutos: "10", grupo: "mm" },
+  { id: "desarrollo-direccion", nombre: "Necesidades de desarrollo · Dirección", minutos: "10", grupo: "cl" },
 ];
 const ASUNTO_INICIAL = "Encuesta breve sobre colaboración entre áreas";
 const MENSAJE_INICIAL = "Hola,\n\nTe invito a completar una breve encuesta sobre cómo colaboramos entre áreas en {cliente}. Lleva unos {minutos} minutos y podés responderla de forma anónima.\n\n{enlace}\n\n¡Muchas gracias por tu tiempo!";
@@ -137,8 +144,126 @@ function agregarCampoCliente() {
   });
 }
 
+// ───────────────────────── Encuestas nuevas ─────────────────────────
+// Las preguntas, opciones y puntajes están en encuestas.json (en el sitio de las encuestas).
+const DEFS_URL = "https://alexschecter.github.io/encuestas/encuestas.json";
+function definiciones_() {
+  const cache = CacheService.getScriptCache(), hit = cache.get("defs");
+  if (hit) return JSON.parse(hit);
+  const t = UrlFetchApp.fetch(DEFS_URL + "?t=" + Date.now()).getContentText();
+  try { cache.put("defs", t, 600); } catch (e) {}
+  return JSON.parse(t);
+}
+
+// Ejecutar UNA vez desde el editor: crea un Google Form (con su hoja de respuestas) por cada encuesta nueva
+// y muestra en el registro los datos que la página de la encuesta necesita para enviar las respuestas.
+// Si se vuelve a ejecutar, no duplica nada: reutiliza los formularios ya creados.
+function crearEncuestasNuevas() {
+  const props = PropertiesService.getScriptProperties();
+  definiciones_().forEach(function (e) {
+    let form = null;
+    const guardado = props.getProperty("nueva:" + e.id);
+    if (guardado) { try { form = FormApp.openById(guardado); } catch (x) {} }
+    if (!form) {
+      form = FormApp.create(e.titulo);
+      form.setDescription(e.intro);
+      form.setCollectEmail(false);
+      e.secciones.forEach(function (sec) {
+        sec.preguntas.forEach(function (q) {
+          let it;
+          if (q.tipo === "texto") it = form.addParagraphTextItem();
+          else if (q.tipo === "elegir3") it = form.addCheckboxItem().setChoiceValues(q.opciones);
+          else it = form.addMultipleChoiceItem().setChoiceValues(q.opciones);
+          it.setTitle(q.titulo).setHelpText(q.id);
+        });
+      });
+      if (e.rolDesdeEnlace) form.addMultipleChoiceItem().setTitle("Rol").setHelpText("ROL").setChoiceValues(["Dirección", "Mandos medios"]);
+      form.addTextItem().setTitle("Nombre (opcional)").setHelpText("NOMBRE");
+      form.addTextItem().setTitle(CAMPO_CLIENTE).setHelpText("CLIENTE");
+      const hoja = SpreadsheetApp.create(e.titulo + " (respuestas)");
+      form.setDestination(FormApp.DestinationType.SPREADSHEET, hoja.getId());
+      if (form.setPublished) form.setPublished(true);
+      props.setProperty("nueva:" + e.id, form.getId());
+    }
+    const entries = {};
+    form.getItems().forEach(function (it) {
+      const t = it.getType(); let r = null;
+      if (t === FormApp.ItemType.MULTIPLE_CHOICE) { const m = it.asMultipleChoiceItem(); r = m.createResponse(m.getChoices()[0].getValue()); }
+      else if (t === FormApp.ItemType.CHECKBOX) { const c = it.asCheckboxItem(); r = c.createResponse([c.getChoices()[0].getValue()]); }
+      else if (t === FormApp.ItemType.PARAGRAPH_TEXT) r = it.asParagraphTextItem().createResponse("x");
+      else if (t === FormApp.ItemType.TEXT) r = it.asTextItem().createResponse("x");
+      if (!r) return;
+      const m = form.createResponse().withItemResponse(r).toPrefilledUrl().match(/entry\.(\d+)=/);
+      if (m) entries[it.getHelpText()] = +m[1];
+    });
+    const pub = form.getPublishedUrl().match(/\/d\/e\/([^/]+)/);
+    Logger.log("ENCUESTA " + JSON.stringify({ id: e.id, formId: pub ? pub[1] : form.getId(), entries: entries }));
+  });
+  Logger.log("Listo. Copiá todo este registro y pegalo en el chat.");
+}
+
+// Lee las respuestas de las encuestas nuevas, separadas por grupo (mandos medios / Dirección) y cliente.
+function datosNuevas_() {
+  const props = PropertiesService.getScriptProperties(), res = [];
+  let defs = [];
+  try { defs = definiciones_(); } catch (e) { return res; }
+  defs.forEach(function (e) {
+    const fid = props.getProperty("nueva:" + e.id);
+    if (!fid) return;
+    let form;
+    try { form = FormApp.openById(fid); } catch (x) { return; }
+    const preguntas = [], secciones = [];
+    e.secciones.forEach(function (sec) {
+      secciones.push({ titulo: sec.titulo, desc: sec.desc || null, area: !!sec.area, perfil: !!sec.perfil });
+      sec.preguntas.forEach(function (q) {
+        preguntas.push({ id: q.id, seccion: sec.titulo, titulo: q.titulo, corto: q.corto || null, tipo: q.tipo,
+          opciones: q.tipo === "texto" ? null : q.opciones, puntajes: q.puntajes || null, multi: q.tipo === "elegir3", perfil: !!sec.perfil });
+      });
+    });
+    const pos = {};
+    preguntas.forEach(function (p, i) { pos[p.id] = i; });
+    const porGrupo = { mm: {}, cl: {} };
+    form.getResponses().forEach(function (r) {
+      let cliente = "", rol = e.grupo || "mm", nombre = "";
+      const vals = {};
+      r.getItemResponses().forEach(function (ir) {
+        const h = ir.getItem().getHelpText(), v = ir.getResponse();
+        if (h === "CLIENTE") cliente = String(v || "").trim();
+        else if (h === "ROL") rol = v === "Dirección" ? "cl" : "mm";
+        else if (h === "NOMBRE") nombre = String(v || "").trim();
+        else vals[h] = v;
+      });
+      cliente = cliente || "(sin cliente)";
+      const clientes = porGrupo[rol];
+      const c = clientes[cliente] || (clientes[cliente] = { n: 0, ultima: null, conteos: preguntas.map(function (p) { return p.opciones ? p.opciones.map(function () { return 0; }) : null; }), textos: preguntas.map(function (p) { return p.opciones ? null : []; }) });
+      c.n++;
+      if (e.tipo === "desarrollo") (c.personas || (c.personas = [])).push({ nombre: nombre, r: vals });
+      const ts = r.getTimestamp(); if (!c.ultima || ts > c.ultima) c.ultima = ts;
+      Object.keys(vals).forEach(function (h) {
+        const i = pos[h]; if (i === undefined) return;
+        const p = preguntas[i], v = vals[h];
+        if (p.multi) (Array.isArray(v) ? v : [v]).forEach(function (x) { const j = p.opciones.indexOf(x); if (j >= 0) c.conteos[i][j]++; });
+        else if (p.opciones) { const j = p.opciones.indexOf(v); if (j >= 0) c.conteos[i][j]++; }
+        else if (v && String(v).trim()) c.textos[i].push(String(v).trim());
+      });
+    });
+    ["mm", "cl"].forEach(function (g) {
+      if (e.grupo && e.grupo !== g) return;
+      const clientes = porGrupo[g];
+      Object.keys(clientes).forEach(function (k) { clientes[k].ultima = clientes[k].ultima ? clientes[k].ultima.toISOString() : null; });
+      res.push({ id: e.id + (g === "cl" && !e.grupo ? "-direccion" : ""), grupo: g, tipo: "n-" + e.id, titulo: e.nombre, nueva: true, clase: e.tipo, tema: e.tema || null,
+        secciones: secciones, preguntas: preguntas, clientes: clientes });
+    });
+  });
+  return res;
+}
+
 function obtenerDatos() {
-  return JSON.stringify(ENCUESTAS.map(function (enc) {
+  return JSON.stringify(datosColaboracion_().concat(datosNuevas_()));
+}
+
+function datosColaboracion_() {
+  return ENCUESTAS.map(function (enc) {
     const form = buscarFormulario_(enc);
     if (!form) return { id: enc.id, grupo: enc.grupo, tipo: enc.tipo, titulo: enc.titulo, error: "No encontré este formulario en tu Drive." };
     const respuestas = form.getResponses();
@@ -175,8 +300,8 @@ function obtenerDatos() {
       });
     });
     Object.keys(clientes).forEach(function (k) { clientes[k].ultima = clientes[k].ultima ? clientes[k].ultima.toISOString() : null; });
-    return { id: enc.id, grupo: enc.grupo, tipo: enc.tipo, titulo: enc.titulo, preguntas: preguntas, clientes: clientes };
-  }));
+    return { id: enc.id, grupo: enc.grupo, tipo: enc.tipo, titulo: enc.tipo === "cultura" ? "Colaboración & Cultura" : "Colaboración", preguntas: preguntas, clientes: clientes };
+  });
 }
 
 // ───────────────────────── Informe (Google Slides) ─────────────────────────
@@ -213,8 +338,8 @@ function generarInforme(cliente, tipo) {
   const pres = SlidesApp.create(nombreBase + " · Completo");
   const ctx = { pres: pres, d: d, pag: 0, imgs: imagenes_() };
   const inicial = pres.getSlides()[0];
-  construirResumen_(ctx);
-  construirDetalle_(ctx);
+  if (d.clase === "desarrollo") { construirDesarrollo_(ctx); construirDetalleDesarrollo_(ctx); }
+  else { construirResumen_(ctx); construirDetalle_(ctx); }
   const nResumen = ctx.nCerradas; // el Resumen incluye las tortas por pregunta, sin las respuestas abiertas
   inicial.remove();
   pres.saveAndClose();
@@ -271,7 +396,8 @@ const DESC_DIMENSION = {
 // Una pregunta con una torta por grupo y el % de cada respuesta (alto: 150).
 function bloquePregunta_(ctx, sl, q, y) {
   const gs = ctx.d.grupos, cols = ESCALA[q.opciones.length] || ESCALA[4];
-  caja_(sl, q.titulo, 30, y, 660, 34, { size: 13, bold: true, color: COL.navy });
+  const tl = q.titulo.length > 95;
+  caja_(sl, q.titulo, 30, tl ? y - 6 : y, 660, tl ? 40 : 34, { size: tl ? 11.5 : 13, bold: true, color: COL.navy });
   gs.forEach(function (g, gi) {
     const x0 = 30 + gi * 335, c = q.por[g.k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0);
     caja_(sl, g.nombre, x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
@@ -297,11 +423,12 @@ function paginasPreguntas_(ctx, titulo, sub, lista) {
 
 // ── Datos ──
 function puntos_(j, n) { return n > 1 ? (n - 1 - j) / (n - 1) * 100 : 100; }
-function puntaje_(conteos) {
+function puntaje_(conteos, puntajes) {
   const n = conteos.reduce(function (a, b) { return a + b; }, 0);
   if (!n) return null;
-  return Math.round(conteos.reduce(function (a, c, j) { return a + c * puntos_(j, conteos.length); }, 0) / n);
+  return Math.round(conteos.reduce(function (a, c, j) { return a + c * (puntajes ? puntajes[j] : puntos_(j, conteos.length)); }, 0) / n);
 }
+const TODOS = { k: "todos", nombre: "Todos", color: COL.mute };
 function promedio_(xs) { xs = xs.filter(function (x) { return x !== null && x !== undefined; }); return xs.length ? Math.round(xs.reduce(function (a, b) { return a + b; }, 0) / xs.length) : null; }
 // Escala única para todo el informe: [rango, estadio, mínimo, color]
 const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
@@ -312,25 +439,48 @@ function banda_(s) { if (s === null || s === undefined) return { t: "Sin datos",
 
 function prepararDatos_(raw, cliente, tipo) {
   const sets = raw.filter(function (s) { return s.tipo === tipo && !s.error; });
+  if (!sets.length) throw new Error("No encontré esta encuesta.");
+  const meta = sets[0], nueva = !!meta.nueva, clase = meta.clase || "colab";
   const g = {};
   sets.forEach(function (s) {
     const c = s.clientes[cliente];
-    g[s.grupo] = { n: c ? c.n : 0, preguntas: s.preguntas.map(function (p, i) {
+    g[s.grupo] = { n: c ? c.n : 0, personas: c && c.personas || [], preguntas: s.preguntas.map(function (p, i) {
       return { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, conteos: c ? c.conteos[i] : (p.opciones ? p.opciones.map(function () { return 0; }) : null), textos: c ? c.textos[i] : [] };
     }) };
   });
-  const grupos = GRUPOS.filter(function (x) { return g[x.k] && g[x.k].n > 0; });
-  if (!grupos.length) throw new Error("Todavía no hay respuestas de este cliente en esta encuesta.");
-  const base = g[grupos[0].k].preguntas;
+  const conDatos = GRUPOS.filter(function (x) { return g[x.k] && g[x.k].n > 0; });
+  if (!conDatos.length) throw new Error("Todavía no hay respuestas de este cliente en esta encuesta.");
+  // Encuestas nuevas por dimensiones: un grupo se muestra solo con 3 respuestas o más; si no, se suma a "Todos".
+  let grupos = conDatos, insuf = [];
+  if (nueva && clase === "dimensiones") {
+    const ok = conDatos.filter(function (x) { return g[x.k].n >= 3; });
+    insuf = conDatos.filter(function (x) { return g[x.k].n < 3; });
+    if (ok.length < 2) {
+      const todos = { n: 0, preguntas: null };
+      conDatos.forEach(function (x) { todos.n += g[x.k].n; });
+      todos.preguntas = g[conDatos[0].k].preguntas.map(function (p, i) {
+        const conteos = p.opciones ? p.opciones.map(function (o, j) { return conDatos.reduce(function (a, x) { return a + g[x.k].preguntas[i].conteos[j]; }, 0); }) : null;
+        // En "Todos" van solo las respuestas abiertas de los grupos que no se muestran aparte (para no repetirlas).
+        const textos = [].concat.apply([], insuf.map(function (x) { return g[x.k].preguntas[i].textos || []; }));
+        return { conteos: conteos, textos: textos };
+      });
+      g.todos = todos;
+      grupos = ok.concat([TODOS]);
+    }
+  }
+  const base = g[conDatos[0].k].preguntas;
+  const defP = meta.preguntas || [];
   const preguntas = base.map(function (p, i) {
-    const q = { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, por: {} };
-    grupos.forEach(function (x) { const pq = g[x.k].preguntas[i]; q.por[x.k] = { conteos: pq.conteos, textos: pq.textos || [], puntaje: p.opciones ? puntaje_(pq.conteos) : null }; });
-    if (p.opciones) q.puntaje = promedio_(grupos.map(function (x) { return q.por[x.k].puntaje; }));
+    const dp = defP[i] || {};
+    const q = { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, puntajes: dp.puntajes || null, multi: !!dp.multi, perfil: !!dp.perfil, corto: dp.corto || null, id: dp.id || null, por: {} };
+    const conPuntaje = p.opciones && !q.multi && !q.perfil;
+    grupos.forEach(function (x) { const pq = g[x.k].preguntas[i]; q.por[x.k] = { conteos: pq.conteos, textos: pq.textos || [], puntaje: conPuntaje ? puntaje_(pq.conteos, q.puntajes) : null }; });
+    if (conPuntaje) q.puntaje = promedio_(grupos.map(function (x) { return q.por[x.k].puntaje; }));
     return q;
   });
   const secciones = [];
   preguntas.forEach(function (q) {
-    if (!q.opciones) return;
+    if (!q.opciones || q.multi || q.perfil) return;
     let s = secciones.filter(function (x) { return x.titulo === q.seccion; })[0];
     if (!s) { s = { titulo: q.seccion, qs: [] }; secciones.push(s); }
     s.qs.push(q);
@@ -343,9 +493,14 @@ function prepararDatos_(raw, cliente, tipo) {
   const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   const hoy = new Date();
   const nombre = String(cliente).replace(/[-_]+/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  const descs = {};
+  (meta.secciones || []).forEach(function (x) { if (x.desc) descs[x.titulo] = x.desc; });
   return {
     cliente: cliente, clienteNombre: nombre, tipo: tipo, grupos: grupos, n: g, preguntas: preguntas, secciones: secciones,
-    tituloEncuesta: tipo === "cultura" ? "Colaboración Interfuncional y Cultura" : "Colaboración Interfuncional",
+    nueva: nueva, clase: clase, insuf: insuf, descs: descs,
+    tema: meta.tema || "la colaboración",
+    dos: grupos.length === 2 && !!g.mm && !!g.cl && grupos.every(function (x) { return x.k !== "todos"; }),
+    tituloEncuesta: nueva ? meta.titulo : tipo === "cultura" ? "Colaboración Interfuncional y Cultura" : "Colaboración Interfuncional",
     fecha: meses[hoy.getMonth()] + " " + hoy.getFullYear(),
   };
 }
@@ -394,7 +549,7 @@ function contenido_(ctx, titulo, sub) {
   return sl;
 }
 function pct_(c, n) { return n ? Math.round(c / n * 100) : 0; }
-function nombreGrupo_(k) { return GRUPOS.filter(function (x) { return x.k === k; })[0].nombre; }
+function nombreGrupo_(k) { return GRUPOS.concat([TODOS]).filter(function (x) { return x.k === k; })[0].nombre; }
 function masElegida_(q, k) {
   const c = q.por[k].conteos; let j = 0;
   c.forEach(function (v, i) { if (v > c[j]) j = i; });
@@ -410,6 +565,12 @@ function barras_(sl, d, filas, l, t, w, h) {
     const y = t + i * alto;
     const tit = caja_(sl, f.etiqueta + (f.desc ? "  ·  " + f.desc : ""), l - 4, y, w, 18, { size: 11, bold: true, color: COL.navy, v: "middle" }).getText();
     if (f.desc) tit.getRange(f.etiqueta.length, f.etiqueta.length + 5 + f.desc.length).getTextStyle().setBold(false).setFontSize(9.5).setForegroundColor(COL.mute);
+    if (f.brecha) {
+      const b = forma_(sl, SlidesApp.ShapeType.ROUND_RECTANGLE, l + w - 74, y + 19, 74, 2 * barH + 3, COL.coral);
+      const bt = b.getText(); bt.setText("Brecha " + f.brecha);
+      bt.getTextStyle().setFontFamily(FONT).setFontSize(9).setBold(true).setForegroundColor(COL.white);
+      bt.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER); b.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
+    }
     gs.forEach(function (x, gi) {
       const v = f.valores[x.k], yy = y + 19 + gi * (barH + 3);
       caja_(sl, x.nombre, l - 4, yy - 4, anchoG, barH + 8, { size: 9, color: COL.mute, v: "middle" });
@@ -440,7 +601,7 @@ function apilada_(sl, q, k, l, t, w, h) {
 
 // ── Resumen ──
 function construirResumen_(ctx) {
-  const d = ctx.d, gs = d.grupos, dos = gs.length === 2;
+  const d = ctx.d, gs = d.grupos, dos = d.dos;
   const secs = d.secciones.slice().sort(function (a, b) { return b.puntaje - a.puntaje; });
   const top = secs[0], low = secs[secs.length - 1];
   const detalleSec = function (s) { return dos ? " (mandos medios " + s.por.mm + ", Dirección " + s.por.cl + ")" : ""; };
@@ -448,9 +609,9 @@ function construirResumen_(ctx) {
   // 1. Portada
   let sl = nueva_(ctx, true);
   if (ctx.imgs.banner) sl.insertImage(ctx.imgs.banner, 0, 0, W, W * 239 / 1031);
-  caja_(sl, (d.tipo === "cultura" ? "Colaboración y cultura en " : "Colaboración interfuncional en ") + d.clienteNombre, 36, 192, 648, 44, { size: 30, bold: true, color: COL.white });
+  caja_(sl, (d.nueva ? d.tituloEncuesta + " en " : d.tipo === "cultura" ? "Colaboración y cultura en " : "Colaboración interfuncional en ") + d.clienteNombre, 36, d.nueva && d.tituloEncuesta.length > 26 ? 150 : 192, 648, d.nueva && d.tituloEncuesta.length > 26 ? 86 : 44, { size: 30, bold: true, color: COL.white, v: "bottom" });
   caja_(sl, "Resultados de la encuesta · " + d.fecha, 36, 240, 648, 22, { size: 14, color: COL.sky });
-  caja_(sl, gs.map(function (x) { return x.nombre + " (" + d.n[x.k].n + ")"; }).join(" · "), 36, 262, 648, 22, { size: 14, color: COL.sand });
+  caja_(sl, GRUPOS.filter(function (x) { return d.n[x.k] && d.n[x.k].n > 0; }).map(function (x) { return x.nombre + " (" + d.n[x.k].n + ")"; }).join(" · "), 36, 262, 648, 22, { size: 14, color: COL.sand });
 
   // 2. Tres mensajes
   sl = contenido_(ctx, "Tres mensajes principales");
@@ -460,10 +621,13 @@ function construirResumen_(ctx) {
     const clMas = d.secciones.filter(function (s) { return s.por.cl - s.por.mm >= 5; }).length;
     const N = d.secciones.length;
     if (!mmMas && !clMas) m1 = ["Una mirada compartida", "Mandos medios y Dirección dan puntajes parecidos en todas las dimensiones."];
-    else if (mmMas >= clMas) m1 = ["Dos miradas distintas", "Los mandos medios ven la colaboración de forma más positiva que Dirección en " + mmMas + " de las " + N + " dimensiones."];
-    else m1 = ["Dos miradas distintas", "Dirección ve la colaboración de forma más positiva que los mandos medios en " + clMas + " de las " + N + " dimensiones."];
-  } else {
+    else if (mmMas >= clMas) m1 = ["Dos miradas distintas", "Los mandos medios ven " + d.tema + " de forma más positiva que Dirección en " + mmMas + " de las " + N + " dimensiones."];
+    else m1 = ["Dos miradas distintas", "Dirección ve " + d.tema + " de forma más positiva que los mandos medios en " + clMas + " de las " + N + " dimensiones."];
+  } else if (gs.length === 1 && gs[0].k !== "todos") {
     m1 = ["Participación", "Respondieron " + d.n[gs[0].k].n + " personas de " + gs[0].nombre.toLowerCase() + "."];
+  } else {
+    const tot = GRUPOS.reduce(function (a, x) { return a + (d.n[x.k] ? d.n[x.k].n : 0); }, 0);
+    m1 = ["Participación", "Respondieron " + tot + " personas. " + d.insuf.map(function (x) { return x.nombre; }).join(" y ") + (d.insuf.length > 1 ? " tienen" : " tiene") + " menos de 3 respuestas, por eso se muestra" + (d.insuf.length > 1 ? "n" : "") + " dentro de Todos."];
   }
   const msgs = [m1,
     ["Fortaleza: " + top.titulo, "Es la dimensión mejor valorada, con un puntaje de " + top.puntaje + detalleSec(top) + "."],
@@ -478,11 +642,12 @@ function construirResumen_(ctx) {
 
   // 3. Participación y escala
   sl = contenido_(ctx, "Quiénes respondieron y cómo leer los resultados");
-  gs.forEach(function (x, i) {
+  GRUPOS.filter(function (x) { return d.n[x.k] && d.n[x.k].n > 0; }).forEach(function (x, i) {
     caja_(sl, String(d.n[x.k].n), 30 + i * 150, 80, 140, 70, { size: 54, bold: true, color: x.color });
     caja_(sl, x.nombre, 30 + i * 150, 150, 140, 22, { size: 14 });
   });
-  caja_(sl, "Respuestas anónimas, salvo quien eligió dar su nombre. Con pocos participantes, cada respuesta pesa mucho: los resultados muestran tendencias para conversar, no conclusiones definitivas.", 30, 190, 300, 120, { size: 12, color: COL.mute });
+  const avisoInsuf = d.insuf.length ? d.insuf.map(function (x) { return x.nombre; }).join(" y ") + ": muestra insuficiente (menos de 3 respuestas). Para cuidar el anonimato, " + (d.insuf.length > 1 ? "sus respuestas se ven" : "sus respuestas se ven") + " solo dentro de Todos.\n\n" : "";
+  caja_(sl, avisoInsuf + "Respuestas anónimas, salvo quien eligió dar su nombre. Con pocos participantes, cada respuesta pesa mucho: los resultados muestran tendencias para conversar, no conclusiones definitivas.", 30, 190, 300, 170, { size: 12, color: COL.mute });
   tarjeta_(sl, 360, 80, 330, 280);
   caja_(sl, "Puntaje de 0 a 100", 374, 92, 300, 24, { size: 15, bold: true, color: COL.navy });
   caja_(sl, "Cada respuesta suma puntos: la opción más favorable vale 100 y la menos favorable 0. El puntaje es el total de puntos obtenidos sobre el máximo posible.", 374, 118, 300, 70, { size: 12 });
@@ -490,31 +655,32 @@ function construirResumen_(ctx) {
     circulo_(sl, 380, 198 + i * 26, 14, e[3]);
     caja_(sl, e[0] + "   " + NIVELES[i], 400, 192 + i * 26, 280, 24, { size: 12, v: "middle" });
   });
-  caja_(sl, "En el puntaje general, estos mismos rangos indican el estadio de colaboración (por ejemplo, 76-100: Conectado y estratégico).", 374, 298, 300, 56, { size: 11, color: COL.mute });
+  caja_(sl, d.nueva ? "El resultado general es el promedio de las dimensiones, y cada dimensión es el promedio de sus preguntas." : "En el puntaje general, estos mismos rangos indican el estadio de colaboración (por ejemplo, 76-100: Conectado y estratégico).", 374, 298, 300, 56, { size: 11, color: COL.mute });
 
   // 3b. Estadio de colaboración (puntaje general = promedio de las dimensiones)
   const general = {};
   // Puntos obtenidos en todas las respuestas cerradas sobre el máximo posible, en %.
   gs.forEach(function (x) {
+    if (d.nueva) { general[x.k] = promedio_(d.secciones.map(function (s) { return s.por[x.k]; })); return; }
     let pts = 0, max = 0;
     d.preguntas.forEach(function (q) { if (!q.opciones) return; q.por[x.k].conteos.forEach(function (c, j) { pts += c * puntos_(j, q.opciones.length); max += c * 100; }); });
     general[x.k] = max ? Math.round(pts / max * 100) : null;
   });
-  const estadioDe = estadio_;
-  sl = contenido_(ctx, "Estadio de colaboración", "Puntos obtenidos en todas las respuestas sobre el total posible, en %.");
+  sl = d.nueva ? contenido_(ctx, "Resultado general", "Promedio de las " + d.secciones.length + " dimensiones, de 0 a 100.")
+    : contenido_(ctx, "Estadio de colaboración", "Puntos obtenidos en todas las respuestas sobre el total posible, en %.");
   // Una sola regla de 0 a 100 con los cuatro estadios; Dirección arriba y Mandos medios abajo.
   const BX = 50, BW = 620, BY = 170, BH = 74;
   ESTADIOS.slice().reverse().forEach(function (e, i) {
     const oscuro = e[3] === COL.coral || e[3] === COL.blue;
     const z = rect_(sl, BX + i * BW / 4, BY, BW / 4, BH, e[3]);
-    const tr = z.getText(); tr.setText(e[0] + "\n" + e[1]);
+    const tr = z.getText(); tr.setText(e[0] + "\n" + (d.nueva ? NIVELES[ESTADIOS.indexOf(e)] : e[1]));
     tr.getTextStyle().setFontFamily(FONT).setFontSize(12).setBold(true).setForegroundColor(oscuro ? COL.white : COL.navy);
     tr.getRange(0, e[0].length).getTextStyle().setFontSize(10).setBold(false);
     tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER); z.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
   });
-  GRUPOS.slice().reverse().filter(function (x) { return general[x.k] !== undefined && general[x.k] !== null; }).forEach(function (x, i) {
+  gs.slice().reverse().filter(function (x) { return general[x.k] !== undefined && general[x.k] !== null; }).forEach(function (x, i) {
     const v = general[x.k], cx = Math.max(BX + 50, Math.min(BX + BW - 50, BX + v / 100 * BW)), mx = BX + v / 100 * BW;
-    const color = x.k === "cl" ? COL.navy : "#2F6DB5";
+    const color = x.k === "mm" ? "#2F6DB5" : x.color;
     // Pila simétrica a cada lado de la barra: flecha (16) · nombre (20) · % (30), separados por 2.
     const arriba = i === 0, y0 = arriba ? BY - 4 : BY + BH + 4, dir = arriba ? -1 : 1;
     const fila = function (desde, alto) { return arriba ? y0 - desde - alto : y0 + desde; };
@@ -525,17 +691,17 @@ function construirResumen_(ctx) {
 
   // 4. Panorama por dimensión
   let titulo4 = "Puntaje por dimensión";
-  if (dos) {
+  if (dos && !d.nueva) {
     const mmMas = d.secciones.filter(function (s) { return s.por.mm > s.por.cl; }).length;
     titulo4 = mmMas > d.secciones.length / 2 ? "Los mandos medios ven la colaboración más positiva" : mmMas < d.secciones.length / 2 ? "Dirección ve la colaboración más positiva" : "Puntaje por dimensión";
   }
   sl = contenido_(ctx, titulo4, "Puntaje de 0 a 100 de cada dimensión: el promedio de sus preguntas.");
-  barras_(sl, d, d.secciones.map(function (s) { return { etiqueta: s.titulo, desc: DESC_DIMENSION[s.titulo] || (s.qs.length + (s.qs.length === 1 ? " pregunta" : " preguntas")), valores: s.por }; }), 34, 80, 476, 290);
+  barras_(sl, d, d.secciones.map(function (s) { return { etiqueta: s.titulo, brecha: dos && d.nueva && Math.abs(s.por.mm - s.por.cl) >= 15 ? Math.abs(s.por.mm - s.por.cl) : 0, desc: d.descs[s.titulo] || DESC_DIMENSION[s.titulo] || (s.qs.length + (s.qs.length === 1 ? " pregunta" : " preguntas")), valores: s.por }; }), 34, 80, 476, 290);
   tarjeta_(sl, 520, 80, 170, 285);
   let lado = ["Lo que se ve", "La dimensión mejor valorada es " + top.titulo + " y la más baja, " + low.titulo + "."];
   if (dos) {
     const gap = d.secciones.slice().sort(function (a, b) { return Math.abs(b.por.mm - b.por.cl) - Math.abs(a.por.mm - a.por.cl); })[0];
-    lado[1] = "La mayor distancia entre los dos grupos está en " + gap.titulo + ": " + gap.por.mm + " para mandos medios y " + gap.por.cl + " para Dirección.\n\n" + lado[1];
+    lado[1] = "La mayor distancia entre los dos grupos está en " + gap.titulo + ": " + gap.por.mm + " para mandos medios y " + gap.por.cl + " para Dirección." + (d.nueva ? (Math.abs(gap.por.mm - gap.por.cl) >= 15 ? " Las brechas de 15 puntos o más están marcadas." : " Ninguna brecha llega a 15 puntos.") : "") + "\n\n" + lado[1];
   }
   caja_(sl, lado[0], 530, 90, 150, 22, { size: 14, bold: true, color: COL.navy });
   caja_(sl, lado[1], 530, 114, 150, 150, { size: 11 });
@@ -552,13 +718,13 @@ function construirResumen_(ctx) {
 
   // 7. Brechas
   if (dos) {
-    const brechas = qs.filter(function (q) { return q.por.mm.puntaje !== null && q.por.cl.puntaje !== null; })
+    const brechas = qs.filter(function (q) { return q.por.mm.puntaje !== null && q.por.cl.puntaje !== null && (!d.nueva || Math.abs(q.por.mm.puntaje - q.por.cl.puntaje) >= 15); })
       .sort(function (a, b) { return Math.abs(b.por.mm.puntaje - b.por.cl.puntaje) - Math.abs(a.por.mm.puntaje - a.por.cl.puntaje); }).slice(0, 5);
-    if (brechas.length) paginasPreguntas_(ctx, "Donde las miradas más se separan", "Las preguntas con más diferencia entre los dos grupos. ¿Qué ve cada nivel que el otro no ve?", brechas.slice(0, 4));
+    if (brechas.length) paginasPreguntas_(ctx, "Donde las miradas más se separan", d.nueva ? "Preguntas con 15 puntos o más de diferencia entre los dos grupos. ¿Qué ve cada nivel que el otro no ve?" : "Las preguntas con más diferencia entre los dos grupos. ¿Qué ve cada nivel que el otro no ve?", brechas.slice(0, 4));
   }
 
   // 7b. Palabras más repetidas (pregunta abierta de "palabras", si hay respuestas)
-  const qPal = d.preguntas.filter(function (q) { return !q.opciones && /palabras/i.test(q.titulo); })[0];
+  const qPal = d.nueva ? null : d.preguntas.filter(function (q) { return !q.opciones && /palabras/i.test(q.titulo); })[0];
   if (qPal) {
     const NO = " a al algo como con de del e el en es esta este hay la las lo los mas más me mi muy no o para pero por que se sin su sus un una uno y ya ";
     const cuenta = {};
@@ -602,6 +768,221 @@ function construirResumen_(ctx) {
   });
 }
 
+// ── Encuestas de necesidades de desarrollo (6 y 7) ──
+const CORTAS_HAB = ["Fortaleza clara", "Bien, con margen", "Me cuesta", "Área nueva"];
+function datosDesarrollo_(d) {
+  const k = d.grupos[0].k, gr = d.n[k];
+  const habs = d.preguntas.filter(function (q) { return q.corto && q.opciones && !q.multi && !q.perfil; });
+  const elegir = d.preguntas.filter(function (q) { return q.multi; })[0];
+  const perfiles = d.preguntas.filter(function (q) { return q.perfil; });
+  const abiertas = d.preguntas.filter(function (q) { return !q.opciones; });
+  habs.forEach(function (q, i) {
+    const c = q.por[k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0);
+    q.cuesta = n ? Math.round((c[2] + c[3]) / n * 100) : 0;
+    q.pedidos = elegir ? elegir.por[k].conteos[i] || 0 : 0;   // el tema i de la lista corresponde a la habilidad i
+    q.v = q.por[k].puntaje;
+  });
+  const porPuntaje = habs.filter(function (q) { return q.v !== null; }).sort(function (a, b) { return a.v - b.v || b.pedidos - a.pedidos; });
+  const porPedidos = habs.slice().sort(function (a, b) { return b.pedidos - a.pedidos || (a.v - b.v); });
+  const bajas = porPuntaje.slice(0, 5), pedidas = porPedidos.filter(function (q) { return q.pedidos > 0; }).slice(0, 5);
+  const claras = bajas.filter(function (q) { return pedidas.indexOf(q) >= 0; });
+  return { k: k, gr: gr, habs: habs, elegir: elegir, perfiles: perfiles, abiertas: abiertas, porPuntaje: porPuntaje, porPedidos: porPedidos, bajas: bajas, pedidas: pedidas, claras: claras };
+}
+function minus_(t) { return t.charAt(0).toLowerCase() + t.slice(1); }
+// Una fila: etiqueta a la izquierda, barra y valor.
+function filaBarra_(sl, etiqueta, v, max, texto, l, y, wEt, wBar, color, size) {
+  caja_(sl, etiqueta, l, y - 3, wEt, 20, { size: size || 10.5, color: COL.ink, v: "middle", align: "end" });
+  rect_(sl, l + wEt + 6, y + 2, wBar, 10, COL.mist);
+  if (v > 0) rect_(sl, l + wEt + 6, y + 2, Math.max(2, wBar * v / max), 10, color);
+  const t = caja_(sl, texto, l + wEt + wBar + 10, y - 3, 150, 20, { size: 9.5, color: COL.ink, v: "middle" }).getText();
+  const sp = texto.indexOf("  "); t.getRange(0, sp > 0 ? sp : texto.length).getTextStyle().setBold(true);
+}
+function construirDesarrollo_(ctx) {
+  const d = ctx.d, x = datosDesarrollo_(d), gr = x.gr, N = gr.n;
+  const grupoNombre = d.grupos[0].nombre;
+  const conNombre = (gr.personas || []).filter(function (p) { return p.nombre; }).length;
+  ctx.des = x;
+
+  // 1. Portada
+  let sl = nueva_(ctx, true);
+  if (ctx.imgs.banner) sl.insertImage(ctx.imgs.banner, 0, 0, W, W * 239 / 1031);
+  caja_(sl, "Necesidades de desarrollo en " + d.clienteNombre, 36, 192, 648, 44, { size: 30, bold: true, color: COL.white });
+  caja_(sl, grupoNombre + " · Resultados de la encuesta · " + d.fecha, 36, 240, 648, 22, { size: 14, color: COL.sky });
+  caja_(sl, N + (N === 1 ? " persona respondió" : " personas respondieron"), 36, 262, 648, 22, { size: 14, color: COL.sand });
+
+  // 2. Tres mensajes
+  sl = contenido_(ctx, "Tres mensajes principales");
+  const fuera = function (q) { return x.claras.indexOf(q) < 0; };
+  const top = x.porPedidos.filter(fuera)[0] || x.porPedidos[0], low = x.porPuntaje.filter(fuera)[0] || x.porPuntaje[0];
+  const msgs = [
+    x.claras.length ? ["Prioridad clara: " + x.claras[0].corto, "Está entre las habilidades con menor puntaje y entre los temas más pedidos" + (x.claras.length > 1 ? ", junto con " + x.claras.slice(1).map(function (q) { return minus_(q.corto); }).join(", ") : "") + "."]
+      : ["Participación", "Respondieron " + N + " personas" + (conNombre ? ", " + conNombre + " con su nombre" : "") + "."],
+    ["Lo más pedido: " + top.corto, top.pedidos + " de " + N + " personas lo eligieron entre sus 3 temas para recibir coaching."],
+    ["Donde se sienten menos fuertes: " + low.corto, "Puntaje " + low.v + " de 100. El " + low.cuesta + "% dice que le cuesta o que es un área nueva."]];
+  msgs.forEach(function (m, i) {
+    const xx = 30 + i * 222;
+    tarjeta_(sl, xx, 80, 210, 280);
+    circulo_(sl, xx + 16, 96, 36, COL.navy, String(i + 1), 16);
+    const largo = m[0].length > 44;
+    caja_(sl, m[0], xx + 12, 142, 186, 70, { size: largo ? 13.5 : 15, bold: true, color: COL.navy });
+    caja_(sl, m[1], xx + 12, 216, 186, 136, { size: 13 });
+  });
+
+  // 3. Quiénes respondieron y cómo leer
+  sl = contenido_(ctx, "Quiénes respondieron y cómo leer los resultados");
+  caja_(sl, String(N), 30, 74, 140, 64, { size: 50, bold: true, color: COL.blue });
+  caja_(sl, grupoNombre + (conNombre ? "\n" + conNombre + " con su nombre" : ""), 30, 138, 300, 40, { size: 13 });
+  let yy = 186;
+  x.perfiles.forEach(function (q) {
+    const c = q.por[x.k].conteos, mx = Math.max.apply(null, c.concat([1]));
+    caja_(sl, q.titulo, 30, yy, 320, 18, { size: 10.5, bold: true, color: COL.navy });
+    yy += 20;
+    q.opciones.forEach(function (o, j) { filaBarra_(sl, o, c[j], mx, String(c[j]), 30, yy, 110, 120, COL.sky, 10); yy += 16; });
+    yy += 8;
+  });
+  tarjeta_(sl, 360, 80, 330, 280);
+  caja_(sl, "Puntaje de 0 a 100", 374, 92, 300, 24, { size: 15, bold: true, color: COL.navy });
+  caja_(sl, "Cada persona dijo qué tan fuerte se siente hoy en cada habilidad. Más puntaje = se siente más fuerte:", 374, 118, 300, 44, { size: 12 });
+  caja_(sl, "Es una fortaleza clara: 100\nLo hago bien, con margen de mejora: 67\nMe cuesta; me vendría bien apoyo: 33\nEs un área nueva o muy difícil: 0", 374, 160, 300, 68, { size: 10.5, color: COL.mute });
+  ESTADIOS.forEach(function (e, i) {
+    circulo_(sl, 380, 238 + i * 22, 13, e[3]);
+    caja_(sl, e[0] + "   " + NIVELES[i], 400, 232 + i * 22, 280, 24, { size: 11.5, v: "middle" });
+  });
+  caja_(sl, "Cada área es el promedio de sus 3 habilidades.", 374, 324, 300, 24, { size: 10.5, color: COL.mute });
+
+  // 4. Fortaleza por habilidad (de menor a mayor)
+  sl = contenido_(ctx, "Cómo se sienten en cada habilidad", "De menor a mayor puntaje. A la derecha: % que eligió \"Me cuesta\" o \"Es un área nueva\".");
+  const alto = Math.min(24, 286 / Math.max(1, x.porPuntaje.length));
+  x.porPuntaje.forEach(function (q, i) {
+    const b = banda_(q.v), y = 84 + i * alto;
+    filaBarra_(sl, q.corto, q.v, 100, q.v + "  " + b.t, 30, y, 190, 150, b.c, 10);
+    caja_(sl, q.cuesta + "%", 452, y - 3, 50, 20, { size: 10, bold: q.cuesta >= 50, color: q.cuesta >= 50 ? COL.coral : COL.mute, v: "middle", align: "end" });
+  });
+  tarjeta_(sl, 520, 80, 170, 285);
+  caja_(sl, "Por área", 530, 90, 150, 22, { size: 14, bold: true, color: COL.navy });
+  d.secciones.slice().sort(function (a, b) { return a.puntaje - b.puntaje; }).forEach(function (s2, i) {
+    const b = banda_(s2.puntaje), y = 118 + i * 50;
+    caja_(sl, s2.titulo, 530, y, 150, 20, { size: 10.5, bold: true, color: COL.ink });
+    rect_(sl, 532, y + 22, 80 * (s2.puntaje || 0) / 100, 9, b.c);
+    caja_(sl, s2.puntaje + "  " + b.t, 614, y + 16, 76, 20, { size: 8.5, color: COL.ink, v: "middle" });
+  });
+
+  // 5. Temas pedidos
+  sl = contenido_(ctx, "Temas pedidos para recibir coaching", "Cuántas personas eligieron cada tema entre sus 3 prioridades para los próximos 6 meses.");
+  const mxP = Math.max(1, x.porPedidos[0].pedidos);
+  x.porPedidos.forEach(function (q, i) {
+    const y = 84 + i * alto, opc = x.elegir ? x.elegir.opciones[x.habs.indexOf(q)] : q.corto;
+    filaBarra_(sl, opc, q.pedidos, mxP, q.pedidos + "  " + (q.pedidos === 1 ? "persona" : "personas") + " (" + pct_(q.pedidos, N) + "%)", 30, y, 250, 250, i < 5 && q.pedidos ? COL.blue : COL.sky, 10);
+  });
+
+  // 6. Prioridades claras
+  sl = contenido_(ctx, "Prioridades claras", "Habilidades que están entre las 5 con menor puntaje Y entre los 5 temas más pedidos.");
+  const enClaras = function (q) { return x.claras.indexOf(q) >= 0; };
+  [["Menor puntaje", x.bajas, function (q) { return q.v + " · " + banda_(q.v).t; }], ["Más pedidos", x.pedidas, function (q) { return q.pedidos + (q.pedidos === 1 ? " persona" : " personas"); }]].forEach(function (col, ci) {
+    const l = 30 + ci * 230;
+    caja_(sl, col[0], l, 82, 220, 22, { size: 13, bold: true, color: COL.navy });
+    col[1].forEach(function (q, i) {
+      const y = 110 + i * 46, dest = enClaras(q);
+      const r = forma_(sl, SlidesApp.ShapeType.ROUND_RECTANGLE, l, y, 216, 40, dest ? COL.blue : COL.mist);
+      caja_(sl, q.corto, l + 8, y + 2, 200, 22, { size: q.corto.length > 30 ? 9.5 : 11, bold: true, color: dest ? COL.white : COL.ink, v: "middle" });
+      caja_(sl, col[2](q), l + 8, y + 20, 200, 18, { size: 9.5, color: dest ? COL.sky : COL.mute, v: "middle" });
+    });
+  });
+  tarjeta_(sl, 500, 82, 190, 280);
+  caja_(sl, x.claras.length ? "Los mejores candidatos para el programa" : "Sin coincidencias", 512, 94, 170, 44, { size: 14, bold: true, color: COL.navy });
+  caja_(sl, x.claras.length ? x.claras.map(function (q) { return "• " + q.corto + ": puntaje " + q.v + ", pedido por " + q.pedidos + " de " + N + "."; }).join("\n\n")
+    : "Ninguna habilidad está a la vez entre las 5 más bajas y las 5 más pedidas. Conviene conversar ambas listas con el equipo.", 512, 140, 170, 210, { size: 11 });
+
+  // 7. Por perfil (solo grupos de 3 o más personas)
+  const personas = gr.personas || [];
+  x.perfiles.forEach(function (pq) {
+    const grupos = pq.opciones.map(function (o) { return { o: o, ps: personas.filter(function (p) { return p.r[pq.id] === o; }) }; }).filter(function (g) { return g.ps.length >= 3; });
+    if (grupos.length < 2) return;
+    sl = contenido_(ctx, "Por perfil: " + minus_(pq.titulo.replace(/^¿|\?$/g, "")), "Puntaje de cada habilidad según el perfil. Solo grupos de 3 personas o más.");
+    const colW = Math.min(110, 430 / grupos.length), x0 = 250;
+    grupos.forEach(function (g, gi) { caja_(sl, g.o + "\n(" + g.ps.length + ")", x0 + gi * colW, 76, colW - 6, 30, { size: 9.5, bold: true, color: COL.navy, align: "center" }); });
+    const filaH = Math.min(21, 255 / x.porPuntaje.length);
+    x.porPuntaje.forEach(function (q, i) {
+      const y = 110 + i * filaH;
+      caja_(sl, q.corto, 30, y, 216, filaH, { size: 9.5, v: "middle", align: "end" });
+      grupos.forEach(function (g, gi) {
+        let pts = 0, n = 0;
+        g.ps.forEach(function (p) { const j = q.opciones.indexOf(p.r[q.id]); if (j >= 0) { pts += q.puntajes[j]; n++; } });
+        const v = n ? Math.round(pts / n) : null, b = banda_(v);
+        const cel = rect_(sl, x0 + gi * colW + 4, y + 1, colW - 14, filaH - 2, b.c);
+        const t = cel.getText(); t.setText(v === null ? "–" : String(v));
+        t.getTextStyle().setFontFamily(FONT).setFontSize(9.5).setBold(true).setForegroundColor(b.c === COL.blue || b.c === COL.coral ? COL.white : COL.navy);
+        t.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER); cel.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
+      });
+    });
+  });
+
+  // 8. Próximos pasos
+  sl = nueva_(ctx, true);
+  const BAN = W * 239 / 1031, dy = ctx.imgs.banner ? BAN - 92 : 0;
+  if (ctx.imgs.banner) sl.insertImage(ctx.imgs.banner, 0, 0, W, BAN);
+  else if (ctx.imgs.logo) sl.insertImage(ctx.imgs.logo, 36, 28, 130, 54);
+  caja_(sl, "Próximos pasos sugeridos", 36, 100 + dy - 8, 648, 40, { size: 26, bold: true, color: COL.white });
+  const foco = (x.claras.length ? x.claras : x.pedidas).slice(0, 3).map(function (q) { return minus_(q.corto); });
+  [["Definir el foco del programa", "Empezar por " + (foco.length ? foco.join(", ") : "los temas más pedidos") + "."],
+   ["Conversaciones individuales", "Una charla breve con cada participante para ajustar el plan a su desafío concreto."],
+   ["Medir el avance", "Repetir esta encuesta en 6 meses para ver cómo cambió la fortaleza en cada habilidad."]].forEach(function (p, i) {
+    const xx = 36 + i * 216, y = dy ? 222 : 168;
+    circulo_(sl, xx, y, 30, COL.blue, String(i + 1), 15);
+    caja_(sl, p[0], xx - 4, y + 34, 200, 40, { size: 14, bold: true, color: COL.white });
+    caja_(sl, p[1], xx - 4, y + 74, 200, dy ? 70 : 90, { size: 12, color: COL.sky });
+  });
+  ctx.nCerradas = ctx.pag;
+}
+// Solo en el informe completo (para el coach): respuestas abiertas y una página por persona que dejó su nombre.
+function construirDetalleDesarrollo_(ctx) {
+  const d = ctx.d, x = ctx.des, N = x.gr.n;
+  let sl = nueva_(ctx, true);
+  if (ctx.imgs.banner) sl.insertImage(ctx.imgs.banner, 0, 0, W, W * 239 / 1031);
+  caja_(sl, "Detalle para el coach", 36, 200, 648, 44, { size: 30, bold: true, color: COL.white });
+  caja_(sl, "Respuestas abiertas textuales y una página por cada persona que dejó su nombre. No compartir con la empresa.", 36, 248, 600, 50, { size: 14, color: COL.sky });
+
+  x.abiertas.forEach(function (q) {
+    const textos = q.por[x.k].textos || [];
+    if (!textos.length) return;
+    let bloque = [], largo = 0;
+    const volcar = function () {
+      const s = contenido_(ctx, "En sus palabras", q.titulo);
+      caja_(s, bloque.map(function (t) { return "— " + t; }).join("\n"), 30, 84, 660, 280, { size: 12 });
+      bloque = []; largo = 0;
+    };
+    textos.forEach(function (t) { if (largo + t.length > 1500 && bloque.length) volcar(); bloque.push(t); largo += t.length + 40; });
+    if (bloque.length) volcar();
+  });
+
+  (x.gr.personas || []).filter(function (p) { return p.nombre; }).sort(function (a, b) { return a.nombre.localeCompare(b.nombre); }).forEach(function (p) {
+    const perfil = x.perfiles.map(function (q) { return p.r[q.id]; }).filter(function (v) { return v; }).join(" · ");
+    sl = contenido_(ctx, p.nombre, perfil || null);
+    caja_(sl, "Cómo se siente en cada habilidad", 30, 76, 330, 18, { size: 11, bold: true, color: COL.navy });
+    const cols = [COL.blue, COL.sky, COL.sand, COL.coral];
+    x.habs.forEach(function (q, i) {
+      const y = 98 + i * 22, j = q.opciones.indexOf(p.r[q.id]);
+      circulo_(sl, 32, y + 4, 10, j >= 0 ? cols[j] : COL.line);
+      caja_(sl, q.corto, 46, y - 2, 200, 20, { size: 10, v: "middle" });
+      caja_(sl, j >= 0 ? CORTAS_HAB[j] : "–", 246, y - 2, 110, 20, { size: 10, bold: j >= 2, color: j >= 2 ? COL.coral : COL.mute, v: "middle" });
+    });
+    tarjeta_(sl, 370, 76, 320, 290);
+    const elegidos = x.elegir ? [].concat(p.r[x.elegir.id] || []) : [];
+    caja_(sl, "Temas que eligió", 382, 84, 300, 18, { size: 11, bold: true, color: COL.navy });
+    caja_(sl, elegidos.length ? elegidos.map(function (t) { return "• " + t; }).join("\n") : "–", 382, 102, 300, 52, { size: 10.5 });
+    let y = 160;
+    x.abiertas.forEach(function (q) {
+      const t = p.r[q.id];
+      if (!t) return;
+      const largo = String(t).length, size = largo > 380 ? 8.5 : largo > 220 ? 9.5 : 10.5, h = Math.min(366 - y - 18, Math.ceil(largo / (size > 10 ? 52 : 62)) * (size + 4) + 8);
+      if (h < 20) return;
+      caja_(sl, q.titulo, 382, y, 300, 26, { size: 9, bold: true, color: COL.mute });
+      caja_(sl, t, 382, y + 24, 300, h, { size: size });
+      y += 24 + h + 6;
+    });
+  });
+}
+
 // ── Detalle (solo informe completo) ──
 function construirDetalle_(ctx) {
   const d = ctx.d, gs = d.grupos;
@@ -628,7 +1009,7 @@ function construirDetalle_(ctx) {
       if (!textos.length) return;
       let bloque = [], largo = 0;
       const volcar = function () {
-        const s = contenido_(ctx, "Respuestas abiertas · " + g.nombre, q.titulo);
+        const s = contenido_(ctx, "Respuestas abiertas" + (g.k === "todos" ? (gs.length > 1 ? " · otros participantes" : "") : " · " + g.nombre), q.titulo);
         caja_(s, bloque.map(function (t) { return "— " + t; }).join("\n"), 30, 84, 660, 280, { size: 12 });
         bloque = []; largo = 0;
       };
@@ -681,6 +1062,8 @@ th { font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var
 .leg i { width:10px; height:10px; border-radius:2px; flex:none; transform:translateY(1px); }
 .leg b { font-variant-numeric:tabular-nums; }
 .glabel { font-weight:600; font-size:.85rem; margin-bottom:4px; }
+.mbar { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 2em; gap:8px; align-items:center; font-size:.85rem; margin:3px 0; }
+.mbar > div { background:var(--line); border-radius:4px; height:10px; } .mbar i { display:block; height:10px; border-radius:4px; background:var(--c0); }
 blockquote { margin:0 0 6px; padding:8px 12px; background:var(--bg); border-radius:8px; white-space:pre-wrap; font-size:.92rem; }
 .err { color:var(--low); }
 details.panel summary { cursor:pointer; font-weight:600; font-size:1.05rem; }
@@ -721,10 +1104,7 @@ a.btn { text-decoration:none; display:inline-block; }
 <div class="top" style="padding:0"><label class="muted" for="cliente">Cliente</label><select id="cliente" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px"></select>
 <button class="btn primary" id="informe">Generar informe</button></div>
 <div id="inf" class="muted" aria-live="polite"></div>
-<div class="tabs" role="tablist">
-  <button class="tab" role="tab" data-tipo="colab" aria-selected="true">Colaboración</button>
-  <button class="tab" role="tab" data-tipo="cultura" aria-selected="false">Colaboración & Cultura</button>
-</div>
+<div class="tabs" role="tablist" id="tabs"></div>
 <div id="out"><p class="muted">Leyendo las respuestas de tus formularios…</p></div>
 </div>
 <script>
@@ -740,13 +1120,18 @@ function buildView(){
     if (s.error) return s;
     var c = (CLIENTE && s.clientes[CLIENTE]) || { n: 0, ultima: null, conteos: s.preguntas.map(function(p){ return p.opciones ? p.opciones.map(function(){return 0;}) : null; }), textos: s.preguntas.map(function(p){ return p.opciones ? null : []; }) };
     return { id: s.id, grupo: s.grupo, tipo: s.tipo, titulo: s.titulo, n: c.n, ultima: c.ultima,
-      preguntas: s.preguntas.map(function(p, i){ return { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, conteos: c.conteos[i], textos: c.textos[i] }; }) };
+      preguntas: s.preguntas.map(function(p, i){ return { seccion: p.seccion, titulo: p.titulo, opciones: p.opciones, puntajes: p.puntajes, multi: p.multi, perfil: p.perfil, conteos: c.conteos[i], textos: c.textos[i] }; }) };
   });
+  var tipos = [], nombres = {};
+  RAW.forEach(function(s){ if (tipos.indexOf(s.tipo) < 0) { tipos.push(s.tipo); nombres[s.tipo] = s.titulo; } });
+  if (tipos.indexOf(TIPO) < 0) TIPO = tipos[0];
+  $("tabs").innerHTML = tipos.map(function(t){ return '<button class="tab" role="tab" data-tipo="'+esc(t)+'" aria-selected="'+(t===TIPO)+'">'+esc(nombres[t])+'</button>'; }).join("");
+  document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ TIPO = t.dataset.tipo; document.querySelectorAll(".tab").forEach(function(x){ x.setAttribute("aria-selected", x===t); }); if (DATA) render(); }; });
 }
-var COLORS = ["var(--c0)","var(--c1)","var(--c2)","var(--c3)"], COLORS3 = ["var(--c0)","var(--c1)","var(--c3)"];
+var COLORS = ["var(--c0)","var(--c1)","var(--c2)","var(--c3)"], COLORS3 = ["var(--c0)","var(--c1)","var(--c3)"], COLORS5 = ["var(--c0)","var(--c1)","#d9d4c7","var(--c2)","var(--c3)"], COLORSX = ["#2453c9","#1d8a5a","#b7791f","#c8452a","#7c3aed","#0e7490","#be185d","#4d7c0f","#8fb0ef","#f1a58f","#94a3b8","#a16207"];
 var GROUP = { mm: "Mandos medios", cl: "Dirección (C-level)" };
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
-function pts(j,n){ return (n-1-j)/(n-1)*100; }
+function pts(j,n,p){ return p && p.puntajes ? p.puntajes[j] : (n-1-j)/(n-1)*100; }
 function band(s){ return s>=76?["e1","Fortaleza"]:s>=51?["e2","Funcional"]:s>=26?["e3","A mejorar"]:["e4","Crítico"]; }
 function pie(counts, colors){
   var tot = counts.reduce(function(a,b){return a+b;},0), a = -Math.PI/2, out = "", r = 52, cx = 60, cy = 60;
@@ -760,8 +1145,8 @@ function pie(counts, colors){
   return '<svg viewBox="0 0 120 120" role="img">'+out+'</svg>';
 }
 function scores(s){ var by = {}, order = [];
-  s.preguntas.forEach(function(p){ if(!p.opciones) return; var n = p.conteos.reduce(function(a,b){return a+b;},0); if(!n) return;
-    var sc = p.conteos.reduce(function(a,c,j){ return a + c*pts(j,p.opciones.length); },0)/n;
+  s.preguntas.forEach(function(p){ if(!p.opciones || p.multi || p.perfil) return; var n = p.conteos.reduce(function(a,b){return a+b;},0); if(!n) return;
+    var sc = p.conteos.reduce(function(a,c,j){ return a + c*pts(j,p.opciones.length,p); },0)/n;
     if(!by[p.seccion]) { by[p.seccion] = []; order.push(p.seccion); } by[p.seccion].push(sc); });
   return order.map(function(k){ return [k, Math.round(by[k].reduce(function(a,b){return a+b;},0)/by[k].length)]; });
 }
@@ -776,13 +1161,15 @@ function render(){
   ok.forEach(function(s,i){ sc[i].forEach(function(x){ if (secs.indexOf(x[0])<0) secs.push(x[0]); }); });
   html += '<div class="panel"><h2>Puntaje por sección</h2><table><thead><tr><th>Sección</th>'+ok.map(function(s){return '<th>'+GROUP[s.grupo]+'</th>';}).join("")+'</tr></thead><tbody>'
     + secs.map(function(k){ return '<tr><td>'+esc(k)+'</td>'+sc.map(function(list){ var f = list.filter(function(x){return x[0]===k;})[0]; if(!f) return '<td class="muted">–</td>'; var b = band(f[1]); return '<td><b>'+f[1]+'</b> <span class="band '+b[0]+'">'+b[1]+'</span></td>'; }).join("")+'</tr>'; }).join("")
-    + '</tbody></table><p class="muted" style="font-size:.85rem;margin:0">Puntaje 0–100: la opción más colaborativa vale 100 y la menos colaborativa 0.</p></div>';
+    + '</tbody></table><p class="muted" style="font-size:.85rem;margin:0">Puntaje 0–100: la mejor respuesta vale 100 y la más baja 0.</p></div>';
   var base = ok[0], cur = null;
   base.preguntas.forEach(function(p, i){
     if (p.seccion !== cur) { if (cur !== null) html += '</div>'; cur = p.seccion; html += '<div class="panel"><h2>'+esc(cur)+'</h2>'; }
     html += '<div class="q"><h3>'+esc(p.titulo)+'</h3>';
     if (p.opciones) {
-      var cols = p.opciones.length === 3 ? COLORS3 : COLORS;
+      var cols = p.opciones.length === 3 ? COLORS3 : p.opciones.length === 5 ? COLORS5 : p.opciones.length > 5 ? COLORSX : COLORS;
+      if (p.multi) { html += ok.map(function(s){ var q = s.preguntas[i], n = s.n || 1, ord = q.opciones.map(function(o,j){ return [o, q.conteos[j]]; }).sort(function(a,b){ return b[1]-a[1]; });
+        return '<div><div class="glabel">'+GROUP[s.grupo]+' <span class="muted">· '+s.n+' personas</span></div>'+ord.map(function(x){ var pc = Math.round(x[1]/n*100); return '<div class="mbar"><span>'+esc(x[0])+'</span><div><i style="width:'+pc+'%"></i></div><b>'+x[1]+'</b></div>'; }).join("")+'</div>'; }).join(""); html += '</div>'; return; }
       html += '<div class="pies">' + ok.map(function(s){ var q = s.preguntas[i]; var n = q.conteos.reduce(function(a,b){return a+b;},0);
         return '<div><div class="glabel">'+GROUP[s.grupo]+' <span class="muted">· '+n+'</span></div><div class="pie">'+pie(q.conteos, cols)+'<div class="leg">'+q.opciones.map(function(o,j){ return '<span><i style="background:'+cols[j]+'"></i>'+esc(o)+' <b>'+q.conteos[j]+'</b></span>'; }).join("")+'</div></div></div>'; }).join("") + '</div>';
     } else {
@@ -798,7 +1185,6 @@ function load(){
   google.script.run.withSuccessHandler(function(json){ RAW = JSON.parse(json); buildView(); render(); document.getElementById("stamp").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}); })
     .withFailureHandler(function(e){ document.getElementById("stamp").textContent = "No se pudo actualizar: " + e.message; }).obtenerDatos();
 }
-document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ TIPO = t.dataset.tipo; document.querySelectorAll(".tab").forEach(function(x){ x.setAttribute("aria-selected", x===t); }); if (DATA) render(); }; });
 document.getElementById("refresh").onclick = load;
 var BASE = "https://alexschecter.github.io/encuestas/#";
 var CONFIG = __CONFIG__;
@@ -809,7 +1195,9 @@ $("asunto").value = CONFIG.asunto; $("mensaje").value = CONFIG.mensaje;
 $("nombre").value = CONFIG.nombre; $("responderA").value = CONFIG.responderA;
 if (CONFIG.remitentes.length < 2) { $("desde").hidden = true; $("desdeL").hidden = true; }
 $("desde").innerHTML = CONFIG.remitentes.map(function(r, i){ return '<option value="'+(i ? esc(r) : "")+'"'+(r === CONFIG.desde ? " selected" : "")+'>'+esc(r)+'</option>'; }).join("");
-function enlace(){ var c = slug($("nuevo").value); return c ? BASE + c + "/" + CONFIG.catalogo[$("encSel").value].id + $("grpSel").value : ""; }
+function enlace(){ var c = slug($("nuevo").value), e = CONFIG.catalogo[$("encSel").value]; return c ? BASE + c + "/" + e.id + (e.grupo ? "" : $("grpSel").value) : ""; }
+function grupoVisible(){ var g = !!CONFIG.catalogo[$("encSel").value].grupo; $("grpSel").disabled = g; $("grpSel").title = g ? "Esta encuesta tiene un solo enlace" : ""; $("grpSel").style.opacity = g ? ".5" : ""; }
+$("encSel").addEventListener("change", grupoVisible);
 function texto(t){ var e = CONFIG.catalogo[$("encSel").value]; return t.split("{cliente}").join($("nuevo").value.trim() || "tu empresa").split("{enlace}").join(enlace()).split("{minutos}").join(e.minutos); }
 function actualizar(){ var u = enlace(); $("enlace").value = u; $("wa").href = "https://wa.me/?text=" + encodeURIComponent(texto($("mensaje").value)); $("wa").style.pointerEvents = u ? "" : "none"; $("wa").style.opacity = u ? "" : ".5"; pend = 0; $("mail").textContent = "Enviar por email"; }
 ["encSel","grpSel","nuevo","mensaje","para"].forEach(function(id){ $(id).addEventListener("input", actualizar); $(id).addEventListener("change", actualizar); });
@@ -849,7 +1237,7 @@ actualizar();
 document.getElementById("informe").onclick = function(){
   var b = this, st = document.getElementById("inf");
   if (!CLIENTE || CLIENTE === "(sin cliente)") { st.innerHTML = '<span class="err">Elegí un cliente en el menú.</span>'; return; }
-  b.disabled = true; st.innerHTML = 'Generando el informe de <b>'+esc(CLIENTE)+'</b> ('+(TIPO === "cultura" ? "Colaboración & Cultura" : "Colaboración")+')… puede tardar 1 a 3 minutos.';
+  b.disabled = true; st.innerHTML = 'Generando el informe de <b>'+esc(CLIENTE)+'</b> ('+esc((RAW.filter(function(x){ return x.tipo === TIPO; })[0] || {}).titulo || "")+')… puede tardar 1 a 3 minutos.';
   google.script.run.withSuccessHandler(function(j){ var r = JSON.parse(j); b.disabled = false;
     st.innerHTML = 'Listo. <a target="_blank" href="'+r.resumen.url+'">Resumen</a> (<a target="_blank" href="'+r.resumen.pdf+'">PDF</a>) · <a target="_blank" href="'+r.completo.url+'">Completo</a> (<a target="_blank" href="'+r.completo.pdf+'">PDF</a>). Quedan en la carpeta "Informes de encuestas" de tu Drive.'; })
     .withFailureHandler(function(e){ b.disabled = false; st.innerHTML = '<span class="err">No se pudo generar el informe: '+esc(e.message)+'</span>'; })
