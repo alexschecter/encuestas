@@ -402,7 +402,7 @@ function bloquePregunta_(ctx, sl, q, y) {
   caja_(sl, q.titulo, 30, tl ? y - 6 : y, 660, tl ? 40 : 34, { size: tl ? 11.5 : 13, bold: true, color: COL.navy });
   gs.forEach(function (g, gi) {
     const x0 = 30 + gi * 335, c = q.por[g.k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0);
-    if (g.nombre) caja_(sl, g.nombre, x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
+    if (g.nombre && gs.length > 1) caja_(sl, g.nombre, x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
     const img = torta_(q, g.k, cols);
     if (img) sl.insertImage(img, x0, y + 56, 90, 90);
     else apilada_(sl, q, g.k, x0, y + 90, 90, 20);
@@ -561,7 +561,7 @@ function masElegida_(q, k) {
 // Barras horizontales por grupo (una fila por etiqueta)
 function barras_(sl, d, filas, l, t, w, h) {
   // Cada fila: el nombre de la dimensión (y qué mide) arriba, y debajo una barra por grupo con su nombre a la izquierda.
-  const gs = d.grupos, anchoG = gs.some(function (x) { return x.nombre; }) ? 84 : 0;
+  const gs = d.grupos, anchoG = gs.length > 1 ? 84 : 0;   // con un solo grupo no hace falta su nombre
   const alto = h / filas.length, barH = 11, maxW = w - anchoG - 96;
   filas.forEach(function (f, i) {
     const y = t + i * alto;
@@ -575,7 +575,7 @@ function barras_(sl, d, filas, l, t, w, h) {
     }
     gs.forEach(function (x, gi) {
       const v = f.valores[x.k], yy = y + 19 + gi * (barH + 3);
-      if (x.nombre) caja_(sl, x.nombre, l - 4, yy - 4, anchoG, barH + 8, { size: 9, color: COL.mute, v: "middle" });
+      if (anchoG) caja_(sl, x.nombre, l - 4, yy - 4, anchoG, barH + 8, { size: 9, color: COL.mute, v: "middle" });
       if (v !== null && v > 0) rect_(sl, l + anchoG, yy, Math.max(2, maxW * v / 100), barH, x.color);
       const et = caja_(sl, v === null ? "–" : v + "  " + banda_(v).t, l + anchoG + Math.max(2, maxW * (v || 0) / 100) + 2, yy - 4, 96, barH + 8, { size: 9.5, color: COL.ink, v: "middle" }).getText();
       if (v !== null) et.getRange(0, String(v).length).getTextStyle().setBold(true);
@@ -687,8 +687,9 @@ function construirResumen_(ctx) {
     const arriba = i === 0, y0 = arriba ? BY - 4 : BY + BH + 4, dir = arriba ? -1 : 1;
     const fila = function (desde, alto) { return arriba ? y0 - desde - alto : y0 + desde; };
     caja_(sl, arriba ? "▼" : "▲", mx - 12, fila(0, 16), 24, 16, { size: 13, color: color, align: "center", v: "middle" });
-    if (x.nombre) caja_(sl, x.nombre, cx - 80, fila(18, 20), 160, 20, { size: 15, bold: true, color: color, align: "center", v: "middle" });
-    caja_(sl, v + "%", cx - 80, fila(x.nombre ? 40 : 18, 30), 160, 30, { size: 26, bold: true, color: color, align: "center", v: "middle" });
+    const conNombre = !!x.nombre && gs.length > 1;
+    if (conNombre) caja_(sl, x.nombre, cx - 80, fila(18, 20), 160, 20, { size: 15, bold: true, color: color, align: "center", v: "middle" });
+    caja_(sl, v + "%", cx - 80, fila(conNombre ? 40 : 18, 30), 160, 30, { size: 26, bold: true, color: color, align: "center", v: "middle" });
   });
 
   // 4. Panorama por dimensión
@@ -1011,7 +1012,7 @@ function construirDetalle_(ctx) {
       if (!textos.length) return;
       let bloque = [], largo = 0;
       const volcar = function () {
-        const s = contenido_(ctx, "Respuestas abiertas" + (g.nombre ? " · " + g.nombre : ""), q.titulo);
+        const s = contenido_(ctx, "Respuestas abiertas" + (g.nombre && gs.length > 1 ? " · " + g.nombre : ""), q.titulo);
         caja_(s, bloque.map(function (t) { return "— " + t; }).join("\n"), 30, 84, 660, 280, { size: 12 });
         bloque = []; largo = 0;
       };
