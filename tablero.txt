@@ -21,7 +21,7 @@ const ENCUESTAS = [
 
 // Encuestas que se pueden enviar desde el tablero. Para sumar una nueva en el futuro, agregala acá.
 const CATALOGO = [
-  { id: "colaboracion", tema: "cómo colaboramos entre áreas", nombre: "Colaboración Interfuncional", minutos: "5 a 7" },
+  { id: "colaboracion", tema: "cómo colaboramos entre áreas", nombre: "Colaboración Interfuncional", minutos: "10" },
   { id: "colaboracion-cultura", tema: "cómo colaboramos entre áreas y la cultura", nombre: "Colaboración Interfuncional & Cultura", minutos: "10" },
   { id: "cultura", tema: "la cultura", nombre: "Cultura", minutos: "10" },
   { id: "liderazgo", tema: "cómo funciona el equipo de liderazgo", nombre: "Efectividad del equipo de liderazgo", minutos: "10" },
