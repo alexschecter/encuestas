@@ -24,12 +24,12 @@ const CATALOGO = [
   { id: "colaboracion", tema: "Colaboración Interfuncional", nombre: "Colaboración Interfuncional", minutos: "10" },
   { id: "colaboracion-cultura", tema: "Colaboración Interfuncional y Cultura", nombre: "Colaboración Interfuncional & Cultura", minutos: "10" },
   { id: "cultura", tema: "Cultura", nombre: "Cultura", minutos: "10" },
-  { id: "liderazgo", tema: "Efectividad del Equipo de Liderazgo", nombre: "Efectividad del equipo de liderazgo", minutos: "10" },
-  { id: "alineacion", tema: "Alineación Estratégica y Prioridades", nombre: "Alineación estratégica y prioridades", minutos: "10" },
-  { id: "feedback", tema: "Feedback y Conversaciones Difíciles", nombre: "Feedback y conversaciones difíciles", minutos: "10" },
-  { id: "delegacion", tema: "Delegación y Ownership", nombre: "Delegación y ownership", minutos: "10" },
-  { id: "desarrollo-mandos-medios", tema: "Necesidades de Desarrollo como Líder", nombre: "Necesidades de desarrollo · Mandos medios", minutos: "10", grupo: "mm" },
-  { id: "desarrollo-direccion", tema: "Necesidades de Desarrollo como Líder", nombre: "Necesidades de desarrollo · Dirección", minutos: "10", grupo: "cl" },
+  { id: "liderazgo", tema: "Efectividad del Equipo de Liderazgo", nombre: "Efectividad del Equipo de Liderazgo", minutos: "10" },
+  { id: "alineacion", tema: "Alineación Estratégica y Prioridades", nombre: "Alineación Estratégica y Prioridades", minutos: "10" },
+  { id: "feedback", tema: "Feedback y Conversaciones Difíciles", nombre: "Feedback y Conversaciones Difíciles", minutos: "10" },
+  { id: "delegacion", tema: "Delegación y Ownership", nombre: "Delegación y Ownership", minutos: "10" },
+  { id: "desarrollo-mandos-medios", tema: "Necesidades de Desarrollo como Líder", nombre: "Necesidades de Desarrollo · Mandos Medios", minutos: "10", grupo: "mm" },
+  { id: "desarrollo-direccion", tema: "Necesidades de Desarrollo como Líder", nombre: "Necesidades de Desarrollo · Dirección", minutos: "10", grupo: "cl" },
 ];
 const ASUNTO_INICIAL = "Encuesta breve sobre {tema} en {cliente}";
 const MENSAJE_INICIAL = "Hola,\n\nTe invito a completar una breve encuesta sobre {tema} en {cliente}. Lleva unos {minutos} minutos y podés responderla de forma anónima.\n\n{enlace}\n\n¡Muchas gracias por tu tiempo!";

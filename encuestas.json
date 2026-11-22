@@ -335,7 +335,7 @@
  },
  {
   "id": "liderazgo",
-  "nombre": "Efectividad del equipo de liderazgo",
+  "nombre": "Efectividad del Equipo de Liderazgo",
   "titulo": "Efectividad del equipo de liderazgo",
   "minutos": "10",
   "intro": "Esta encuesta busca entender cómo funciona el equipo de liderazgo. Cuando decimos \"mi equipo\" nos referimos al equipo de liderazgo del que formo parte (por ejemplo, el equipo directivo, o el grupo de líderes de mi área). No hay respuestas correctas o incorrectas: la idea es responder pensando en cómo son las cosas hoy. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
@@ -669,7 +669,7 @@
  },
  {
   "id": "alineacion",
-  "nombre": "Alineación estratégica y prioridades",
+  "nombre": "Alineación Estratégica y Prioridades",
   "titulo": "Alineación estratégica y prioridades",
   "minutos": "10",
   "intro": "Esta encuesta busca entender qué tan claros y compartidos son el rumbo y las prioridades de la empresa. No hay respuestas correctas o incorrectas: la idea es responder pensando en cómo son las cosas hoy. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
@@ -1003,7 +1003,7 @@
  },
  {
   "id": "feedback",
-  "nombre": "Feedback y conversaciones difíciles",
+  "nombre": "Feedback y Conversaciones Difíciles",
   "titulo": "Feedback y conversaciones difíciles",
   "minutos": "10",
   "intro": "Esta encuesta busca entender cómo se da y se recibe el feedback, y cómo se manejan las conversaciones difíciles. Algunas preguntas son sobre lo que recibo y otras sobre lo que hago yo. No hay respuestas correctas o incorrectas: la idea es responder con honestidad, pensando en cómo son las cosas hoy. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
@@ -1335,7 +1335,7 @@
  },
  {
   "id": "delegacion",
-  "nombre": "Delegación y ownership",
+  "nombre": "Delegación y Ownership",
   "titulo": "Delegación y ownership",
   "minutos": "10",
   "intro": "Esta encuesta busca entender cómo se delega y cómo se asume el ownership. Algunas preguntas son sobre lo que me delegan a mí y otras sobre cómo delego yo. No hay respuestas correctas o incorrectas: la idea es responder pensando en cómo son las cosas hoy. Toma unos 10 minutos. La encuesta es anónima: el nombre es opcional y los resultados solo se muestran de forma agregada.",
@@ -1668,7 +1668,7 @@
  },
  {
   "id": "desarrollo-mandos-medios",
-  "nombre": "Necesidades de desarrollo · Mandos medios",
+  "nombre": "Necesidades de Desarrollo · Mandos Medios",
   "titulo": "¿En qué quiero crecer como líder? (Mandos medios)",
   "minutos": "10",
   "intro": "Esta encuesta busca entender en qué temas cada líder siente que podría crecer más, para diseñar un programa de coaching que sea realmente útil. No es una evaluación de desempeño: no hay respuestas correctas, y cuanto más honesta sea la respuesta, mejor se va a poder adaptar el programa. Toma unos 10 minutos.",
@@ -1991,7 +1991,7 @@
  },
  {
   "id": "desarrollo-direccion",
-  "nombre": "Necesidades de desarrollo · Dirección",
+  "nombre": "Necesidades de Desarrollo · Dirección",
   "titulo": "¿En qué quiero crecer como líder? (Dirección y fundadores)",
   "minutos": "10",
   "intro": "Esta encuesta busca entender en qué temas cada miembro de la dirección siente que podría crecer más, para diseñar un acompañamiento de coaching que sea realmente útil. No es una evaluación de desempeño: no hay respuestas correctas, y cuanto más honesta sea la respuesta, mejor se va a poder adaptar el trabajo. Toma unos 10 minutos.",
