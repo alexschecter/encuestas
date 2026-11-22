@@ -429,7 +429,7 @@ function puntaje_(conteos, puntajes) {
   if (!n) return null;
   return Math.round(conteos.reduce(function (a, c, j) { return a + c * (puntajes ? puntajes[j] : puntos_(j, conteos.length)); }, 0) / n);
 }
-const TODOS = { k: "todos", nombre: "", color: "#2F6DB5" }; // todas las respuestas juntas, sin nombre de grupo
+const TODOS = { k: "todos", nombre: "Todos", color: "#2F6DB5" }; // los dos grupos juntos
 function promedio_(xs) { xs = xs.filter(function (x) { return x !== null && x !== undefined; }); return xs.length ? Math.round(xs.reduce(function (a, b) { return a + b; }, 0) / xs.length) : null; }
 // Escala única para todo el informe: [rango, estadio, mínimo, color]
 const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
@@ -456,7 +456,7 @@ function prepararDatos_(raw, cliente, tipo) {
   if (nueva && clase === "dimensiones") {
     const ok = conDatos.filter(function (x) { return g[x.k].n >= 3; });
     insuf = conDatos.filter(function (x) { return g[x.k].n < 3; });
-    if (ok.length < 2) {
+    if (conDatos.length === 2 && ok.length < 2) {   // respondieron los dos grupos, pero alguno con menos de 3: se muestran juntos
       const todos = { n: 0, preguntas: null };
       conDatos.forEach(function (x) { todos.n += g[x.k].n; });
       todos.preguntas = g[conDatos[0].k].preguntas.map(function (p, i) {
@@ -624,10 +624,10 @@ function construirResumen_(ctx) {
     else if (mmMas >= clMas) m1 = ["Dos miradas distintas", "Los mandos medios ven " + d.tema + " de forma más positiva que Dirección en " + mmMas + " de las " + N + " dimensiones."];
     else m1 = ["Dos miradas distintas", "Dirección ve " + d.tema + " de forma más positiva que los mandos medios en " + clMas + " de las " + N + " dimensiones."];
   } else if (gs.length === 1 && gs[0].k !== "todos") {
-    m1 = ["Participación", "Respondieron " + d.n[gs[0].k].n + " personas de " + gs[0].nombre.toLowerCase() + "."];
+    m1 = ["Participación", (d.n[gs[0].k].n === 1 ? "Respondió 1 persona" : "Respondieron " + d.n[gs[0].k].n + " personas") + " de " + gs[0].nombre.toLowerCase() + "."];
   } else {
     const tot = GRUPOS.reduce(function (a, x) { return a + (d.n[x.k] ? d.n[x.k].n : 0); }, 0);
-    m1 = ["Participación", "Respondieron " + tot + (tot === 1 ? " persona." : " personas.") + (d.insuf.length ? " Para cuidar el anonimato, los resultados se muestran sin separar por grupo." : "")];
+    m1 = ["Participación", "Respondieron " + tot + (tot === 1 ? " persona." : " personas.") + (gs[0].k === "todos" ? " Para cuidar el anonimato, los dos grupos se muestran juntos (Todos)." : "")];
   }
   const msgs = [m1,
     ["Fortaleza: " + top.titulo, "Es la dimensión mejor valorada, con un puntaje de " + top.puntaje + detalleSec(top) + "."],
@@ -646,7 +646,7 @@ function construirResumen_(ctx) {
     caja_(sl, String(d.n[x.k].n), 30 + i * 150, 80, 140, 70, { size: 54, bold: true, color: x.color });
     caja_(sl, x.nombre, 30 + i * 150, 150, 140, 22, { size: 14 });
   });
-  const avisoInsuf = d.insuf.length ? "Para separar por grupo hacen falta al menos 3 respuestas en cada uno. Para cuidar el anonimato, los resultados se muestran todos juntos.\n\n" : "";
+  const avisoInsuf = gs[0].k === "todos" ? "Para separar por grupo hacen falta al menos 3 respuestas en cada uno. Para cuidar el anonimato, los dos grupos se muestran juntos como Todos.\n\n" : "";
   caja_(sl, avisoInsuf + "Respuestas anónimas, salvo quien eligió dar su nombre. Con pocos participantes, cada respuesta pesa mucho: los resultados muestran tendencias para conversar, no conclusiones definitivas.", 30, 190, 300, 170, { size: 12, color: COL.mute });
   tarjeta_(sl, 360, 80, 330, 280);
   caja_(sl, "Puntaje de 0 a 100", 374, 92, 300, 24, { size: 15, bold: true, color: COL.navy });
