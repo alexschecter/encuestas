@@ -587,15 +587,18 @@ function construirResumen_(ctx) {
 
   // 8. Próximos pasos
   sl = nueva_(ctx, true);
-  if (ctx.imgs.logo) sl.insertImage(ctx.imgs.logo, 36, 28, 130, 54);
-  caja_(sl, "Próximos pasos sugeridos", 36, 100, 648, 40, { size: 26, bold: true, color: COL.white });
+  const BAN = W * 239 / 1031, dy = ctx.imgs.banner ? BAN - 92 : 0; // con el banner de la portada arriba, el contenido baja
+  if (ctx.imgs.banner) sl.insertImage(ctx.imgs.banner, 0, 0, W, BAN);
+  else if (ctx.imgs.logo) sl.insertImage(ctx.imgs.logo, 36, 28, 130, 54);
+  caja_(sl, "Próximos pasos sugeridos", 36, 100 + dy - 8, 648, 40, { size: 26, bold: true, color: COL.white });
   [[dos ? "Alinear miradas" : "Compartir los resultados", dos ? "Una sesión conjunta de Dirección y mandos medios para revisar estos resultados." : "Una sesión con el equipo para revisar estos resultados y priorizar."],
    ["Trabajar sobre " + low.titulo.charAt(0).toLowerCase() + low.titulo.slice(1), "Elegir una o dos acciones concretas para los próximos 90 días."],
    ["Sostener " + top.titulo.charAt(0).toLowerCase() + top.titulo.slice(1), "Hacer visible lo que ya funciona y usarlo como punto de apoyo."]].forEach(function (p, i) {
     const x = 36 + i * 216;
-    circulo_(sl, x, 168, 32, COL.blue, String(i + 1), 15);
-    caja_(sl, p[0], x - 4, 208, 200, 50, { size: 14, bold: true, color: COL.white });
-    caja_(sl, p[1], x - 4, 258, 200, 90, { size: 12, color: COL.sky });
+    const yy = dy ? 222 : 168;
+    circulo_(sl, x, yy, 30, COL.blue, String(i + 1), 15);
+    caja_(sl, p[0], x - 4, yy + 34, 200, 40, { size: 14, bold: true, color: COL.white });
+    caja_(sl, p[1], x - 4, yy + 74, 200, dy ? 70 : 90, { size: 12, color: COL.sky });
   });
 }
 
@@ -603,9 +606,10 @@ function construirResumen_(ctx) {
 function construirDetalle_(ctx) {
   const d = ctx.d, gs = d.grupos;
   let sl = nueva_(ctx, true);
-  if (ctx.imgs.logo) sl.insertImage(ctx.imgs.logo, 600, 18, 96, 40);
-  caja_(sl, "Detalle por pregunta", 36, 150, 648, 44, { size: 30, bold: true, color: COL.white });
-  caja_(sl, "Para cada pregunta: el % de personas que eligió cada respuesta y el puntaje de 0 a 100 de cada grupo.", 36, 198, 600, 50, { size: 14, color: COL.sky });
+  if (ctx.imgs.banner) sl.insertImage(ctx.imgs.banner, 0, 0, W, W * 239 / 1031);
+  else if (ctx.imgs.logo) sl.insertImage(ctx.imgs.logo, 600, 18, 96, 40);
+  caja_(sl, "Detalle por pregunta", 36, 200, 648, 44, { size: 30, bold: true, color: COL.white });
+  caja_(sl, "Para cada pregunta: el % de personas que eligió cada respuesta y el puntaje de 0 a 100 de cada grupo.", 36, 248, 600, 50, { size: 14, color: COL.sky });
 
   // preguntas cerradas, de a 2 por diapositiva dentro de cada sección
   d.secciones.forEach(function (s) {
