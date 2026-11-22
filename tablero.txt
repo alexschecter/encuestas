@@ -401,7 +401,7 @@ function bloquePregunta_(ctx, sl, q, y) {
   caja_(sl, q.titulo, 30, tl ? y - 6 : y, 660, tl ? 40 : 34, { size: tl ? 11.5 : 13, bold: true, color: COL.navy });
   gs.forEach(function (g, gi) {
     const x0 = 30 + gi * 335, c = q.por[g.k].conteos, n = c.reduce(function (a, b) { return a + b; }, 0);
-    caja_(sl, g.nombre, x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
+    if (g.nombre) caja_(sl, g.nombre, x0, y + 34, 320, 20, { size: 11, bold: true, color: g.color });
     const img = torta_(q, g.k, cols);
     if (img) sl.insertImage(img, x0, y + 56, 90, 90);
     else apilada_(sl, q, g.k, x0, y + 90, 90, 20);
@@ -429,7 +429,7 @@ function puntaje_(conteos, puntajes) {
   if (!n) return null;
   return Math.round(conteos.reduce(function (a, c, j) { return a + c * (puntajes ? puntajes[j] : puntos_(j, conteos.length)); }, 0) / n);
 }
-const TODOS = { k: "todos", nombre: "Todos", color: COL.mute };
+const TODOS = { k: "todos", nombre: "", color: "#2F6DB5" }; // todas las respuestas juntas, sin nombre de grupo
 function promedio_(xs) { xs = xs.filter(function (x) { return x !== null && x !== undefined; }); return xs.length ? Math.round(xs.reduce(function (a, b) { return a + b; }, 0) / xs.length) : null; }
 // Escala única para todo el informe: [rango, estadio, mínimo, color]
 const ESTADIOS = [["76-100", "Conectado y estratégico", 76, COL.blue], ["51-75", "Funcional pero fragmentado", 51, COL.sky], ["26-50", "Transaccional y a veces tenso", 26, COL.sand], ["0-25", "Aislado e ineficiente", 0, COL.coral]];
@@ -461,12 +461,11 @@ function prepararDatos_(raw, cliente, tipo) {
       conDatos.forEach(function (x) { todos.n += g[x.k].n; });
       todos.preguntas = g[conDatos[0].k].preguntas.map(function (p, i) {
         const conteos = p.opciones ? p.opciones.map(function (o, j) { return conDatos.reduce(function (a, x) { return a + g[x.k].preguntas[i].conteos[j]; }, 0); }) : null;
-        // En "Todos" van solo las respuestas abiertas de los grupos que no se muestran aparte (para no repetirlas).
-        const textos = [].concat.apply([], insuf.map(function (x) { return g[x.k].preguntas[i].textos || []; }));
+        const textos = [].concat.apply([], conDatos.map(function (x) { return g[x.k].preguntas[i].textos || []; }));
         return { conteos: conteos, textos: textos };
       });
       g.todos = todos;
-      grupos = ok.concat([TODOS]);
+      grupos = [TODOS];   // si no hay 3 respuestas en cada grupo, se muestran todas juntas sin separar
     }
   }
   const base = g[conDatos[0].k].preguntas;
@@ -560,7 +559,7 @@ function masElegida_(q, k) {
 // Barras horizontales por grupo (una fila por etiqueta)
 function barras_(sl, d, filas, l, t, w, h) {
   // Cada fila: el nombre de la dimensión (y qué mide) arriba, y debajo una barra por grupo con su nombre a la izquierda.
-  const gs = d.grupos, anchoG = 84;
+  const gs = d.grupos, anchoG = gs.some(function (x) { return x.nombre; }) ? 84 : 0;
   const alto = h / filas.length, barH = 11, maxW = w - anchoG - 96;
   filas.forEach(function (f, i) {
     const y = t + i * alto;
@@ -574,7 +573,7 @@ function barras_(sl, d, filas, l, t, w, h) {
     }
     gs.forEach(function (x, gi) {
       const v = f.valores[x.k], yy = y + 19 + gi * (barH + 3);
-      caja_(sl, x.nombre, l - 4, yy - 4, anchoG, barH + 8, { size: 9, color: COL.mute, v: "middle" });
+      if (x.nombre) caja_(sl, x.nombre, l - 4, yy - 4, anchoG, barH + 8, { size: 9, color: COL.mute, v: "middle" });
       if (v !== null && v > 0) rect_(sl, l + anchoG, yy, Math.max(2, maxW * v / 100), barH, x.color);
       const et = caja_(sl, v === null ? "–" : v + "  " + banda_(v).t, l + anchoG + Math.max(2, maxW * (v || 0) / 100) + 2, yy - 4, 96, barH + 8, { size: 9.5, color: COL.ink, v: "middle" }).getText();
       if (v !== null) et.getRange(0, String(v).length).getTextStyle().setBold(true);
@@ -628,7 +627,7 @@ function construirResumen_(ctx) {
     m1 = ["Participación", "Respondieron " + d.n[gs[0].k].n + " personas de " + gs[0].nombre.toLowerCase() + "."];
   } else {
     const tot = GRUPOS.reduce(function (a, x) { return a + (d.n[x.k] ? d.n[x.k].n : 0); }, 0);
-    m1 = ["Participación", "Respondieron " + tot + " personas. " + d.insuf.map(function (x) { return x.nombre; }).join(" y ") + (d.insuf.length > 1 ? " tienen" : " tiene") + " menos de 3 respuestas, por eso se muestra" + (d.insuf.length > 1 ? "n" : "") + " dentro de Todos."];
+    m1 = ["Participación", "Respondieron " + tot + (tot === 1 ? " persona." : " personas.") + (d.insuf.length ? " Para cuidar el anonimato, los resultados se muestran sin separar por grupo." : "")];
   }
   const msgs = [m1,
     ["Fortaleza: " + top.titulo, "Es la dimensión mejor valorada, con un puntaje de " + top.puntaje + detalleSec(top) + "."],
@@ -647,7 +646,7 @@ function construirResumen_(ctx) {
     caja_(sl, String(d.n[x.k].n), 30 + i * 150, 80, 140, 70, { size: 54, bold: true, color: x.color });
     caja_(sl, x.nombre, 30 + i * 150, 150, 140, 22, { size: 14 });
   });
-  const avisoInsuf = d.insuf.length ? d.insuf.map(function (x) { return x.nombre; }).join(" y ") + ": muestra insuficiente (menos de 3 respuestas). Para cuidar el anonimato, " + (d.insuf.length > 1 ? "sus respuestas se ven" : "sus respuestas se ven") + " solo dentro de Todos.\n\n" : "";
+  const avisoInsuf = d.insuf.length ? "Para separar por grupo hacen falta al menos 3 respuestas en cada uno. Para cuidar el anonimato, los resultados se muestran todos juntos.\n\n" : "";
   caja_(sl, avisoInsuf + "Respuestas anónimas, salvo quien eligió dar su nombre. Con pocos participantes, cada respuesta pesa mucho: los resultados muestran tendencias para conversar, no conclusiones definitivas.", 30, 190, 300, 170, { size: 12, color: COL.mute });
   tarjeta_(sl, 360, 80, 330, 280);
   caja_(sl, "Puntaje de 0 a 100", 374, 92, 300, 24, { size: 15, bold: true, color: COL.navy });
@@ -686,8 +685,8 @@ function construirResumen_(ctx) {
     const arriba = i === 0, y0 = arriba ? BY - 4 : BY + BH + 4, dir = arriba ? -1 : 1;
     const fila = function (desde, alto) { return arriba ? y0 - desde - alto : y0 + desde; };
     caja_(sl, arriba ? "▼" : "▲", mx - 12, fila(0, 16), 24, 16, { size: 13, color: color, align: "center", v: "middle" });
-    caja_(sl, x.nombre, cx - 80, fila(18, 20), 160, 20, { size: 15, bold: true, color: color, align: "center", v: "middle" });
-    caja_(sl, v + "%", cx - 80, fila(40, 30), 160, 30, { size: 26, bold: true, color: color, align: "center", v: "middle" });
+    if (x.nombre) caja_(sl, x.nombre, cx - 80, fila(18, 20), 160, 20, { size: 15, bold: true, color: color, align: "center", v: "middle" });
+    caja_(sl, v + "%", cx - 80, fila(x.nombre ? 40 : 18, 30), 160, 30, { size: 26, bold: true, color: color, align: "center", v: "middle" });
   });
 
   // 4. Panorama por dimensión
@@ -714,8 +713,8 @@ function construirResumen_(ctx) {
   // 5 y 6. Fortalezas y prioridades
   const qs = d.preguntas.filter(function (q) { return q.opciones && q.puntaje !== null; });
   const ord = qs.slice().sort(function (a, b) { return b.puntaje - a.puntaje; });
-  paginasPreguntas_(ctx, "Fortalezas: lo mejor valorado", "Las preguntas con mayor puntaje: cómo respondió cada grupo.", ord.slice(0, 4));
-  paginasPreguntas_(ctx, "Prioridades: lo que más necesita atención", "Las preguntas con menor puntaje: cómo respondió cada grupo.", ord.slice(-4).reverse());
+  paginasPreguntas_(ctx, "Fortalezas: lo mejor valorado", "Las preguntas con mayor puntaje" + (gs.length > 1 ? ": cómo respondió cada grupo." : "."), ord.slice(0, 4));
+  paginasPreguntas_(ctx, "Prioridades: lo que más necesita atención", "Las preguntas con menor puntaje" + (gs.length > 1 ? ": cómo respondió cada grupo." : "."), ord.slice(-4).reverse());
 
   // 7. Brechas
   if (dos) {
@@ -1010,7 +1009,7 @@ function construirDetalle_(ctx) {
       if (!textos.length) return;
       let bloque = [], largo = 0;
       const volcar = function () {
-        const s = contenido_(ctx, "Respuestas abiertas" + (g.k === "todos" ? (gs.length > 1 ? " · otros participantes" : "") : " · " + g.nombre), q.titulo);
+        const s = contenido_(ctx, "Respuestas abiertas" + (g.nombre ? " · " + g.nombre : ""), q.titulo);
         caja_(s, bloque.map(function (t) { return "— " + t; }).join("\n"), 30, 84, 660, 280, { size: 12 });
         bloque = []; largo = 0;
       };
