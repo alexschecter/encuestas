@@ -429,6 +429,7 @@ function puntaje_(conteos, puntajes) {
   if (!n) return null;
   return Math.round(conteos.reduce(function (a, c, j) { return a + c * (puntajes ? puntajes[j] : puntos_(j, conteos.length)); }, 0) / n);
 }
+const JUNTAR_GRUPOS = false; // Alex prefiere ver siempre Mandos medios y Dirección por separado
 const TODOS = { k: "todos", nombre: "Todos", color: "#2F6DB5" }; // los dos grupos juntos
 function promedio_(xs) { xs = xs.filter(function (x) { return x !== null && x !== undefined; }); return xs.length ? Math.round(xs.reduce(function (a, b) { return a + b; }, 0) / xs.length) : null; }
 // Escala única para todo el informe: [rango, estadio, mínimo, color]
@@ -456,7 +457,7 @@ function prepararDatos_(raw, cliente, tipo) {
   if (nueva && clase === "dimensiones") {
     const ok = conDatos.filter(function (x) { return g[x.k].n >= 3; });
     insuf = conDatos.filter(function (x) { return g[x.k].n < 3; });
-    if (conDatos.length === 2 && ok.length < 2) {   // respondieron los dos grupos, pero alguno con menos de 3: se muestran juntos
+    if (JUNTAR_GRUPOS && conDatos.length === 2 && ok.length < 2) {   // respondieron los dos grupos, pero alguno con menos de 3: se muestran juntos
       const todos = { n: 0, preguntas: null };
       conDatos.forEach(function (x) { todos.n += g[x.k].n; });
       todos.preguntas = g[conDatos[0].k].preguntas.map(function (p, i) {
@@ -646,7 +647,7 @@ function construirResumen_(ctx) {
     caja_(sl, String(d.n[x.k].n), 30 + i * 150, 80, 140, 70, { size: 54, bold: true, color: x.color });
     caja_(sl, x.nombre, 30 + i * 150, 150, 140, 22, { size: 14 });
   });
-  const avisoInsuf = gs[0].k === "todos" ? "Para separar por grupo hacen falta al menos 3 respuestas en cada uno. Para cuidar el anonimato, los dos grupos se muestran juntos como Todos.\n\n" : "";
+  const avisoInsuf = !JUNTAR_GRUPOS && d.insuf.length && gs.length > 1 ? d.insuf.map(function (x) { return x.nombre; }).join(" y ") + " tiene menos de 3 respuestas: sus resultados son orientativos y cada respuesta pesa mucho.\n\n" : gs[0].k === "todos" ? "Para separar por grupo hacen falta al menos 3 respuestas en cada uno. Para cuidar el anonimato, los dos grupos se muestran juntos como Todos.\n\n" : "";
   caja_(sl, avisoInsuf + "Respuestas anónimas, salvo quien eligió dar su nombre. Con pocos participantes, cada respuesta pesa mucho: los resultados muestran tendencias para conversar, no conclusiones definitivas.", 30, 190, 300, 170, { size: 12, color: COL.mute });
   tarjeta_(sl, 360, 80, 330, 280);
   caja_(sl, "Puntaje de 0 a 100", 374, 92, 300, 24, { size: 15, bold: true, color: COL.navy });
